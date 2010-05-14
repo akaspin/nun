@@ -34,7 +34,6 @@ function compile(origin, options, callback) {
 				update(options).digest("hex");
 			}
 			if (cache[cached]) {
-				sys.debug("C");
 				callback(undefined, cache[cached]);
 				return;
 			}
