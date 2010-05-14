@@ -78,15 +78,15 @@ Instead of rendering the template can be compiled for future use.
 
 Basic syntax in Nun is very similar to Mustache with some slight differences.
 
-All tags in Nun enclosed in pair delimiters. By default {{ and }}. After the 
+All tags in Nun enclosed in pair delimiters. By default `{{` and `}}`. After the 
 opening delimiter may be followed by the operator. After that, always follows
 context key. Tags in Nun may contain spaces between parts of tags.
 
 For example:
 
     {{name}} 
-    {{ns.name}} 
-    {{#name}} 
+    {{deep.in.name}} 
+    {{#section_start}} 
 
 Nun supports following operators:
 
@@ -104,7 +104,8 @@ context. Tag renders if key exists, and not undefined. If reference not found
 or value is undefined, nothing will be rendered. 
 
 All output are HTML escaped by default. If you want to render unescaped HTML,
-use ampersand (&) as operator. Unescaped triple tags ({{{ }}}) not supported.
+use ampersand (`&`) as operator. Unescaped triple tags from mustache 
+(`{{{ }}}`) not supported.
 
 Template:
 
@@ -153,10 +154,10 @@ context and callback. Callback receives two arguments: error and data.
 ## Sections
 
 Sections render blocks of text one or more times, depending on the value of the 
-key in the current context. A section begins with a pound (#) and ends with a 
-slash (/). Local context is defined by key and mixed into the global context for
-all nested tags. In sections with local context you can access to global context
-by placing dot before tag id.
+key in the current context. A section begins with a pound (`#`) and ends with a 
+slash (`/`). Local context is defined by key and mixed into the global context 
+for all nested tags. In sections with local context you can access to global 
+context by placing dot (`.`) before tag id.
 
 The behavior of the section is determined by the value of the key in context. 
 Value in context can be one of following:
@@ -164,7 +165,7 @@ Value in context can be one of following:
 * Non empty array
 * Non empty object
 * Non empty String 
-* Non zero Number
+* Non Zero Number
 * Boolean true
 
 If the value does not fit into these limits, nothing will be rendered.
@@ -203,7 +204,8 @@ Will produce output:
 If value is Object what contains any keys, section renders once with local 
 context.
 
-For example: if you render template from Arrays sections with following context:
+For example: if you render template from Arrays 
+sections with following context:
 
     { 
         info: {
@@ -334,9 +336,9 @@ compilation.
 Template overrides come from Django Templating. You can think of them as stack 
 of layers.
 
-Overrides defines by blocks that begins with a plus sign (+) and ends with a 
-slash (/). Blocks can not be nested. Also you need provide tag with smaller 
-sign (<) and relative path to base template.  
+Overrides defines by blocks that begins with a plus sign (`+`) and ends with a 
+slash (`/`). Blocks can not be nested. Also you need provide tag with smaller 
+sign (`<`) and relative path to base template.  
 
 Syntax of override template:
     
@@ -404,7 +406,7 @@ quite useful.
 ### Template partials
 
 Partials similar to partials in Mustache, but executed on a compilation phase. 
-Syntax is same: partial tag defined with a greater than sign (>) and relative 
+Syntax is same: partial tag defined with a greater than sign (`>`) and relative 
 path to partial. Partials can be recursive.
 
 template.html
@@ -428,7 +430,7 @@ And result of execution template.html:
 Compile-phase filters are executed on the phase of compilation after 
 application of overrides and expansion of partials. Compile-phase filters 
 affect all the static template code which they frame. A filter begins with 
-a tilde (~) and ends with a slash (/).
+a tilde (`~`) and ends with a slash (`/`).
 
 Lets execute template with imaginary "toUpperCase" filter:
 
@@ -507,7 +509,7 @@ like TeX, where double-braces may occur in the text and are awkward to use
 for markup."
 
 Tag Shapeshifter start with an equal sign and change the tag delimiters from 
-{{ and }} to custom strings.
+`{{` and `}}` to custom strings.
 
 Example from Mustache:
 
