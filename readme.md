@@ -104,8 +104,8 @@ context. Tag renders if key exists, and not undefined. If reference not found
 or value is undefined, nothing will be rendered. 
 
 All output are HTML escaped by default. If you want to render unescaped HTML,
-use ampersand (`&`) as operator. Unescaped triple tags from mustache 
-(`{{{ }}}`) not supported.
+use ampersand `&` as operator. Unescaped triple tags from mustache 
+`{{{ }}}` not supported.
 
 Template:
 
@@ -129,7 +129,7 @@ Output:
     
 Key may be a synchronous or asynchronous function.
 
-In synchronous way "year" key from previous template may looks like this:
+In synchronous way `year` key from previous template may looks like this:
 
     year: function(context){
         return 1992;
@@ -154,10 +154,10 @@ context and callback. Callback receives two arguments: error and data.
 ## Sections
 
 Sections render blocks of text one or more times, depending on the value of the 
-key in the current context. A section begins with a pound (`#`) and ends with a 
-slash (`/`). Local context is defined by key and mixed into the global context 
+key in the current context. A section begins with a pound `#` and ends with a 
+slash `/`. Local context is defined by key and mixed into the global context 
 for all nested tags. In sections with local context you can access to global 
-context by placing dot (`.`) before tag id.
+context by placing dot `.` before tag id.
 
 The behavior of the section is determined by the value of the key in context. 
 Value in context can be one of following:
@@ -232,7 +232,7 @@ value of the key, inverted sections may render text once based on the inverse
 value of the key. That is, they will be rendered if the key doesn't exist, 
 is false, is Zero Number, is Empty String, is an empty Array or empty Object.
 
-An inverted section begins with a caret (hat) (`^`) and ends with a slash (`/`).
+An inverted section begins with a caret (hat) `^` and ends with a slash `/`.
 
 Template:
 
@@ -336,9 +336,9 @@ compilation.
 Template overrides come from Django Templating. You can think of them as stack 
 of layers.
 
-Overrides defines by blocks that begins with a plus sign (`+`) and ends with a 
-slash (`/`). Blocks can not be nested. Also you need provide tag with smaller 
-sign (`<`) and relative path to base template.  
+Overrides defines by blocks that begins with a plus sign `+` and ends with a 
+slash `/`. Blocks can not be nested. Also you need provide tag with smaller 
+sign `<` and relative path to base template.  
 
 Syntax of override template:
     
@@ -406,7 +406,7 @@ quite useful.
 ### Template partials
 
 Partials similar to partials in Mustache, but executed on a compilation phase. 
-Syntax is same: partial tag defined with a greater than sign (`>`) and relative 
+Syntax is same: partial tag defined with a greater than sign `>` and relative 
 path to partial. Partials can be recursive.
 
 template.html
@@ -430,7 +430,7 @@ And result of execution template.html:
 Compile-phase filters are executed on the phase of compilation after 
 application of overrides and expansion of partials. Compile-phase filters 
 affect all the static template code which they frame. A filter begins with 
-a tilde (`~`) and ends with a slash (`/`).
+a tilde `~` and ends with a slash `/`.
 
 Lets execute template with imaginary "toUpperCase" filter:
 
@@ -508,8 +508,8 @@ Tag shapeshifting, according to *ctemplate*, this "is useful for languages
 like TeX, where double-braces may occur in the text and are awkward to use 
 for markup."
 
-Tag Shapeshifter start with an equal sign and change the tag delimiters from 
-`{{` and `}}` to custom strings.
+Tag Shapeshifter start with an equal `=` sign and change the tag delimiters 
+from `{{` and `}}` to custom strings.
 
 Example from Mustache:
 
