@@ -21,6 +21,6 @@ nun.render(f, fixture.context, fixture.options,
 	var buffer = '';
 	output.addListener('data', function(data){ buffer += data; })
 	.addListener('end', function(){ 
-		fs.writeFile(e, buffer, 'binary', function() {sys.debug(buffer);});
+		fs.writeFile(e, buffer, 'utf8', function() {sys.debug(buffer);});
 	});
 });
