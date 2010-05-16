@@ -67,34 +67,6 @@ function make(origin, options, callback){
 		});
 	});
 }
-
-//function compile(origin, options, callback) {
-//	process.nextTick(function () {
-//		origin = path.normalize(origin);
-//		var cached = origin;
-//		if (options && options.cache == false) cached = false;
-//		
-//		if (cached) {
-//			if (have_openssl) {
-//				cached += crypto.createHash("sha1").
-//				update(options).digest("hex");
-//			}
-//			if (cache[cached]) {
-//				callback(undefined, cache[cached]);
-//				return;
-//			}
-//		}
-//		parser.parse(origin, options, function(err, stream) {
-//			compiler.compile(stream, function(fn) {
-//				
-//				if (cached && (!cache[cached])) {
-//					cache[cached] = fn;
-//				}
-//				callback(undefined, fn);
-//			});
-//		});
-//	});
-//}
 exports.compile = compile;
 
 function render(origin, context, options, callback){
