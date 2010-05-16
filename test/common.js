@@ -1,3 +1,4 @@
+var sys = require("sys");
 var assert =  require('assert');
 var fs = require("fs");
 var path = require("path");
@@ -18,6 +19,8 @@ assertFile = exports.assertFile = function(actual, name) {
 			var buf = new Buffer(contents.length);
 			buf.write(contents, 'binary', 0);
 			var expected = buf.toString("utf8");
+			
+			//sys.debug(expected);
 			assert.equal(actual, expected);
 		}
 	});
@@ -31,10 +34,13 @@ exports.test = function(name, context, options) {
 		if (err) throw err;
 		
 		var buffer = '';
-		output.addListener('data', function(data){ buffer += data; })
-		.addListener('end', function(){ 
-			assertFile(buffer, name); 
-		});
+		output
+			.addListener('data', function(data){ buffer += data; })
+			.addListener('end', function(){ 
+				
+				//sys.debug(buffer);
+				assertFile(buffer, name); 
+			});
 	});
 };
 
