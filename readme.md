@@ -155,9 +155,8 @@ context and callback. Callback receives two arguments: error and data.
 
 Sections render blocks of text one or more times, depending on the value of the 
 key in the current context. A section begins with a pound `#` and ends with a 
-slash `/`. Local context is defined by key and mixed into the global context 
-for all nested tags. In sections with local context you can access to global 
-context by placing dot `.` before tag id.
+slash `/`. Local context is defined by key. In sections with local context you 
+can access to global context by placing dot `.` before tag id.
 
 The behavior of the section is determined by the value of the key in context. 
 Value in context can be one of following:

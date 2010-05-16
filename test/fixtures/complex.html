@@ -1,14 +1,14 @@
 <h1>{{header}}</h1>
 {{#list}}
   <ul>
-  {{#item}}
+  {{#.item}}
     {{#current}}
       <li><strong>{{name}}</strong></li>
     {{/current}}
-    {{#link}}
+    {{#.link}}
       <li><a href="{{url}}">{{name}}</a></li>
-    {{/link}}
-  {{/item}}
+    {{/.link}}
+  {{/.item}}
   </ul>
 {{/list}}
 {{#empty}}
