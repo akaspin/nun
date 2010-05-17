@@ -33,7 +33,7 @@ exports.test = function(name, context, options) {
 	nun.render(file(name), context, options, function(err, output){
 		if (err) throw err;
 		
-		var buffer = '';
+		var buffer = ''; // all tests must produce data
 		output
 			.addListener('data', function(data){ buffer += data; })
 			.addListener('end', function(){ 
