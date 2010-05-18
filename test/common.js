@@ -26,6 +26,8 @@ assertFile = exports.assertFile = function(actual, name) {
 	});
 };
 
+var ended = false;
+
 exports.test = function(name, context, options) {
 	var fixture = require("./fixtures/" + name);
 	var context = context || fixture.context;
@@ -37,10 +39,14 @@ exports.test = function(name, context, options) {
 		output
 			.addListener('data', function(data){ buffer += data; })
 			.addListener('end', function(){ 
-				
+				ended = true;
 				//sys.debug(buffer);
 				assertFile(buffer, name); 
 			});
 	});
 };
+
+process.addListener("exit", function () {
+	  assert.ok(ended);
+});
 
