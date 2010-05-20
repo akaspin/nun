@@ -1,6 +1,6 @@
 var sys = require("sys");
 var assert = require("assert");
-var cache = require("../lib/cache");
+var cache = require("../cache");
 
 var renders = 0;
 var gets = 0;

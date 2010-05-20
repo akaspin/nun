@@ -10,9 +10,9 @@ try {
   have_openssl=false;
 }
 
-var parser = require("./lib/parser");
-var compiler = require("./lib/compiler");
-var cache = require("./lib/cache");
+var parser = require("./parser");
+var compiler = require("./compiler");
+var cache = require("./cache");
 
 /**
  * Compiles file to template. 

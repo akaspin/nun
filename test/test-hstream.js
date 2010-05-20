@@ -1,6 +1,6 @@
 var sys = require("sys");
 var assert =  require('assert');
-var HStream = require("../lib/hstream").HStream;
+var HStream = require("../hstream").HStream;
 
 var lambda = function(data, callback) {
 	setTimeout(function() {
