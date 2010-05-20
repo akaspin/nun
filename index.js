@@ -35,7 +35,7 @@ function compile(origin, options, callback) {
 				key += crypto.createHash("sha1").
 						update(options).digest("hex");
 			}
-			cache.get(key,
+			cache(key,
 					function(fn) { // getter
 						callback(undefined, fn);
 					},
