@@ -72,7 +72,12 @@ Instead of rendering the template can be compiled for future use.
         template(ctx)
             .addListener('data', function(data){ buffer += data; })
             .addListener('end', function(){ sys.puts(buffer) });
-    });   
+    });
+    
+To run the tests:
+
+    cd where/is/nun
+    make    
 
 ## Basic syntax
 
