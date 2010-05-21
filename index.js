@@ -25,7 +25,7 @@ function compile(origin, options, callback) {
 		origin = path.normalize(origin);
 		
 		// determine caching
-		var key = origin;
+		var key = "__tpl__" + origin;
 		if (options && options.cache == false) key = false;
 		
 		// If caching enabled -  
