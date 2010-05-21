@@ -4,7 +4,9 @@ var nun = require("../");
 var fs = require("fs");
 
 var example = process.argv[2];
+var nofixture = process.argv[3];
 sys.debug(example);
+sys.debug(nofixture);
 
 if (!example) {
   process.exit(0);
@@ -13,7 +15,11 @@ if (!example) {
 var f = path.normalize(__dirname + "/fixtures/"+example+".html"); 
 var e = path.normalize(__dirname + "/expects/"+example+".html"); 
 
-var fixture = require("./fixtures/" + example);
+var fixture = {context: {}, options: {}};
+if (!nofixture) {
+	fixture = require("./fixtures/" + example);
+}
+
 nun.render(f, fixture.context, fixture.options, 
 		function(err, output){
 	if (err) throw err;

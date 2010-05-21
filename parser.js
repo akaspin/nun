@@ -37,6 +37,7 @@ var defaultFilters = {
 function parse(origin, customOptions, callback) {
 	loader(origin, function(err, source) {
 	parseText(source, origin, customOptions, function(err, stream) {
+		sys.puts(sys.inspect(stream));
 			callback(err, stream);
 			
 	});	});
@@ -72,8 +73,9 @@ function parseText(source, origin, customOptions, callback) {
 	applyOverrides(err, stream, {}, origin, options, function(err, stream) {
 	expandPartials(err, stream, origin, options, function(err, stream) {
 	applyFilters(err, stream, options, function(err, stream) {
-					callback(err, stream);
-	}); }); }); });
+	cleanup(err, stream, 'meta', function(err, stream) {
+			callback(err, stream);
+	}); }); }); }); });
 }
 exports.parseText = parseText;
 
@@ -89,60 +91,58 @@ function applyOverrides(err, stream, metas, origin, options, callback) {
 		return;
 	}
 	
-//	process.nextTick(function () {
-		// determine override state
-		var over = false;
+	// determine override state
+	var over = false;
+	stream.forEach(function(chunk) {
+		if (chunk.op == 'override') over = chunk.value;
+	});
+	if (over) { // it's override
+		// collect metas and call base template
+		var huntFor = "";
+		var ingest = false;
 		stream.forEach(function(chunk) {
-			if (chunk.op == 'override') over = chunk.value;
+			if (chunk.op == 'meta') {
+				huntFor = chunk.value;
+				if (!metas[huntFor]) {
+					metas[huntFor] = [];
+					ingest = true;
+				} else {
+					ingest = false;
+				}
+			} else if (chunk.op == 'end' && chunk.value == huntFor) {
+				huntFor = "";
+			} else if (huntFor) {
+				if (ingest) metas[huntFor].push(chunk);
+			}
 		});
-		if (over) { // it's override
-			// collect metas and call base template
-			var huntFor = "";
-			var ingest = false;
-			stream.forEach(function(chunk) {
-				if (chunk.op == 'meta') {
-					huntFor = chunk.value;
-					if (!metas[huntFor]) {
-						metas[huntFor] = [];
-						ingest = true;
-					} else {
-						ingest = false;
-					}
-				} else if (chunk.op == 'end' && chunk.value == huntFor) {
-					huntFor = "";
-				} else if (huntFor) {
-					if (ingest) metas[huntFor].push(chunk);
-				}
-			});
-			
-			bOrigin = makePath(origin, over);
-			loader(origin, function(err, source) {
-			tokenize(source, options, function(err, stream) {
-			applyOverrides(err, stream, metas, bOrigin, options, 
-					function(err, stream) {	
-						callback(err, stream);
-			});	}); });
-		} else if (Object.keys(metas).join("") != "") { 
-			// base template and metas, apply metas and out
-			var out = [];
-			var huntFor = "";
-			stream.forEach(function(chunk) {
-				if (chunk.op == "meta" && (chunk.value in metas)) {
-					huntFor = chunk.value;
-				} else if (chunk.op == "end" && chunk.value == huntFor) {
-					Array.prototype.push.apply(out, metas[huntFor]);
-					huntFor = "";
-				} else if (!huntFor) {
-					out.push(chunk);
-				}
-			});
-			callback(err, out);
-		} else { // Base template, no metas - just clean metas
-			cleanup(err, stream, 'meta', function(err, stream) {
+		
+		bOrigin = makePath(origin, over);
+		loader(origin, function(err, source) {
+		tokenize(source, options, function(err, stream) {
+		applyOverrides(err, stream, metas, bOrigin, options, 
+				function(err, stream) {	
 					callback(err, stream);
-			});
-		}
-//	});
+		});	}); });
+	} else if (Object.keys(metas).join("") != "") { 
+		// base template and metas, apply metas and out
+		var out = [];
+		var huntFor = "";
+		stream.forEach(function(chunk) {
+			if (chunk.op == "meta" && (chunk.value in metas)) {
+				huntFor = chunk.value;
+			} else if (chunk.op == "end" && chunk.value == huntFor) {
+				Array.prototype.push.apply(out, metas[huntFor]);
+				huntFor = "";
+			} else if (!huntFor) {
+				out.push(chunk);
+			}
+		});
+		callback(err, out);
+	} else { // Base template, no metas - just clean metas
+		cleanup(err, stream, 'meta', function(err, stream) {
+				callback(err, stream);
+		});
+	}
 }
 
 /**
@@ -158,42 +158,40 @@ function expandPartials(err, stream, origin, options, callback) {
 		return;
 	}
 	
-//	process.nextTick(function () {
-		var partials = stream.map(function(chunk) {
-			return chunk.op == 'partial' ?	chunk.value	: false;
-		}).filter(filterFalsy);
-		
-		if (partials.length) {
-			var actions = partials.map(function(candidate) {
-				var absPath = makePath(origin, candidate);
-				return function(callback) {
-					parse(absPath, options, function(err, stream) {
-						callback(err, stream, candidate);
-					});
-				};
-			});
-			parallel(actions, function(results) {
-				var partials = {};
-				results.forEach(function (result) {
-					if (result.type === 'success') {
-						partials[result.values[1]] = result.values[0];
-					}
+	var partials = stream.map(function(chunk) {
+		return chunk.op == 'partial' ?	chunk.value	: false;
+	}).filter(filterFalsy);
+	
+	if (partials.length) {
+		var actions = partials.map(function(candidate) {
+			var absPath = makePath(origin, candidate);
+			return function(callback) {
+				parse(absPath, options, function(err, stream) {
+					callback(err, stream, candidate);
 				});
-				var out = [];
-				stream.forEach(function(chunk) {
-					if (chunk.op == 'partial' && chunk.value in partials) {
-						Array.prototype.push.apply(out, 
-								partials[chunk.value]);
-					} else {
-						out.push(chunk);
-					}
-				});
-				callback(err, out);
+			};
+		});
+		parallel(actions, function(results) {
+			var partials = {};
+			results.forEach(function (result) {
+				if (result.type === 'success') {
+					partials[result.values[1]] = result.values[0];
+				}
 			});
-		} else {
-			callback(err, stream);
-		}
-//	});
+			var out = [];
+			stream.forEach(function(chunk) {
+				if (chunk.op == 'partial' && chunk.value in partials) {
+					Array.prototype.push.apply(out, 
+							partials[chunk.value]);
+				} else {
+					out.push(chunk);
+				}
+			});
+			callback(err, out);
+		});
+	} else {
+		callback(err, stream);
+	}
 }
 
 /**
@@ -215,20 +213,17 @@ function applyFilters(err, stream, options, callback) {
 			callback(err);
 			return;
 		}
-//		process.nextTick(function () {
-			var out = [];
-			
-			stream.forEach(function(chunk) {
-				if (chunk.op == 'raw' && out.length && 
-						out[out.length-1].op == 'raw') {
-					out[out.length-1].value = 
-						(out[out.length-1].value + chunk.value);
-				} else {
-					out.push(chunk);
-				}
-			});
-			callback(undefined, out);
-//		});
+		var out = [];
+		stream.forEach(function(chunk) {
+			if (chunk.op == 'raw' && out.length && 
+					out[out.length-1].op == 'raw') {
+				out[out.length-1].value = 
+					(out[out.length-1].value + chunk.value);
+			} else {
+				out.push(chunk);
+			}
+		});
+		callback(undefined, out);
 	}
 	
 	if (err) {
@@ -236,64 +231,60 @@ function applyFilters(err, stream, options, callback) {
 		return;
 	}
 	
-//	process.nextTick(function () {
-		compress(err, stream, function(err, stream) {
-			// collect filters without nested filters
-			collected = [];
-			nested = false;
-			buffer = [];
-			huntFor = "";
-			huntId = undefined;
-			for ( var i = 0; i < stream.length; i++) {
-				if (stream[i].op == 'filter') {
-					if (huntFor) nested = true;
-					huntFor = stream[i].value;
-					huntId = i;
-					buffer = [];
-				} else if (stream[i].op == "end" 
-						&& stream[i].value == huntFor) {
-					Array.prototype.push.apply(collected, buffer);
-				} else if (huntFor && stream[i].op == "raw") {
-						buffer.push({id:i, 
-							value: stream[i].value, 
-							filter: huntFor,
-							fId: huntId});
-				}
+	compress(err, stream, function(err, stream) {
+		// collect filters without nested filters
+		collected = [];
+		nested = false;
+		buffer = [];
+		huntFor = "";
+		huntId = undefined;
+		for ( var i = 0; i < stream.length; i++) {
+			if (stream[i].op == 'filter') {
+				if (huntFor) nested = true;
+				huntFor = stream[i].value;
+				huntId = i;
+				buffer = [];
+			} else if (stream[i].op == "end" 
+					&& stream[i].value == huntFor) {
+				Array.prototype.push.apply(collected, buffer);
+			} else if (huntFor && stream[i].op == "raw") {
+					buffer.push({id:i, 
+						value: stream[i].value, 
+						filter: huntFor,
+						fId: huntId});
 			}
-			
-			if (collected.length) {
-				var actions = collected.map(function(sign) {
-					return function(callback) {
-						options.filters[sign.filter](
-								sign.value,	function(err, value) {
-							callback(err, value, sign.id, sign.fId);
-						});
-					};
-				});
-				parallel(actions, function(results) {
-					var toKill = []; // filter chunks
-					results.forEach(function(result) {
-						if (result.type === 'success') {
-							var value = result.values[0];
-							var id = result.values[1];
-							var fId = result.values[2];
-							stream[id].value = value;
-							stream[fId].op = "TO_KILL";
-						}
+		}
+		
+		if (collected.length) {
+			var actions = collected.map(function(sign) {
+				return function(callback) {
+					options.filters[sign.filter](
+							sign.value,	function(err, value) {
+						callback(err, value, sign.id, sign.fId);
 					});
-					cleanup(err, stream, "TO_KILL", function(err, stream) {
-						nested ? applyFilters(err, stream, options, callback) 
-								: callback(undefined, stream);
-					});
+				};
+			});
+			parallel(actions, function(results) {
+				var toKill = []; // filter chunks
+				results.forEach(function(result) {
+					if (result.type === 'success') {
+						var value = result.values[0];
+						var id = result.values[1];
+						var fId = result.values[2];
+						stream[id].value = value;
+						stream[fId].op = "TO_KILL";
+					}
 				});
-			} else { // no filters - just do callback
-				callback(undefined, stream);
-			}
-		});
-//	});
+				cleanup(err, stream, "TO_KILL", function(err, stream) {
+					nested ? applyFilters(err, stream, options, callback) 
+							: callback(undefined, stream);
+				});
+			});
+		} else { // no filters - just do callback
+			callback(undefined, stream);
+		}
+	});
 }
-
-
 
 function cleanup(err, stream, op, callback){
 	if (err) {
@@ -301,21 +292,19 @@ function cleanup(err, stream, op, callback){
 		return;
 	}
 	
-//	process.nextTick(function () {
-		var huntFor = "";
-		var out = stream.filter(function(chunk) {
-			if (chunk.op == op) {
-				huntFor = chunk.value;
-				return false;
-			} else if (chunk.op == "end" && chunk.value == huntFor) {
-				huntFor = "";
-				return false;
-			} else {
-				return true;
-			}
-		});
-		callback(undefined, out);
-//	});
+	var huntFor = "";
+	var out = stream.filter(function(chunk) {
+		if (chunk.op == op) {
+			huntFor = chunk.value;
+			return false;
+		} else if (chunk.op == "end" && chunk.value == huntFor) {
+			huntFor = "";
+			return false;
+		} else {
+			return true;
+		}
+	});
+	callback(undefined, out);
 }
 
 /**

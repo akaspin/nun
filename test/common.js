@@ -28,11 +28,13 @@ assertFile = exports.assertFile = function(actual, name) {
 
 var ended = false;
 
-exports.test = function(name, context, options) {
-	var fixture = require("./fixtures/" + name);
-	var context = context || fixture.context;
-	var options = options || fixture.options;
-	nun.render(file(name), context, options, function(err, output){
+exports.test = function(name, context, options, callback) {
+	var fixture = {context: {}, options: {}};
+	if (!context && !options) {
+		fixture = require("./fixtures/" + name);
+	}
+	nun.render(file(name), fixture.context, fixture.options, 
+			function(err, output){
 		if (err) throw err;
 		
 		var buffer = ''; // all tests must produce data
