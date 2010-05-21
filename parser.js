@@ -37,6 +37,7 @@ var defaultFilters = {
 function parse(origin, customOptions, callback) {
 	loader(origin, function(err, source) {
 	parseText(source, origin, customOptions, function(err, stream) {
+		//sys.puts(sys.inspect(stream));
 			callback(err, stream);
 	});	});
 }

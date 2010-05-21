@@ -42,7 +42,7 @@ exports.test = function(name, context, options, callback) {
 			.addListener('data', function(data){ buffer += data; })
 			.addListener('end', function(){ 
 				ended = true;
-				//sys.debug(buffer);
+//				sys.debug("!" + buffer + "!");
 				assertFile(buffer, name); 
 			});
 	});

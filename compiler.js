@@ -97,6 +97,7 @@ function section(hStream, manner, id, target, context, action) {
 			manner(hStream, id, target, context, action);
 		}
 	} else { // Just context
+
 		manner(hStream, id, target, context, action);
 	}
 }
@@ -121,26 +122,21 @@ function sectionNormal(hStream, id, target, context, action) {
 			hStream.end(subid);
 		}
 		hStream.end(id);
-		return;
-	}
-	
-	if (target !== undefined && 
+	} else if (
+		target !== undefined && 
 		target != "" &&
 		target != 0 &&
-		target == true && 
+		target != false && 
 		target != null &&
 		typeof target !== 'object') {
 			action(id + "/", context);
 			hStream.end(id);
-			return;
-	}
-	
-	if (typeof target === 'object' && target != null) {
+	} else if (typeof target === 'object' && target != null) {
 		if (!Object.keys(target).length){
 			hStream.write(id, "");
 		} else {
 			//var oproto = insertProto(deepClone(target), context);
-			action(id + "/", context);
+			action(id + "/", target);
 			hStream.end(id);
 		}
 	} else {
@@ -166,7 +162,7 @@ function sectionInverted(hStream, id, target, context, action) {
 		(target instanceof Array && !target.length) ||
 		(typeof target === 'object' && !Object.keys(target).length)
 		) {
-		action(id + "/", context);
+		action(id + "/", target);
 		hStream.end(id);
 	} else {
 		hStream.write(id, "");
