@@ -462,6 +462,10 @@ Nun includes number basic filters:
 * `escape` - Escapes all HTML-specific characters.
 * `compress` - Compresses all multiple spaces to single, trims lines and 
   replaces multiple line endings with single.
+  
+#### Third-party filters
+
+* [nun-v](http://github.com/akaspin/nun-v) - Static content versioning
 
 #### Custom filters
 
