@@ -40,10 +40,16 @@ exports.defaultFilters = defaultFilters;
  */
 function parse(origin, customOptions, callback) {
 	loader(origin, function(err, source) {
-	parseText(source, origin, customOptions, function(err, stream) {
+		if (err) {
+			callback(err);
+			return;
+		}
+		
+		parseText(source, origin, customOptions, function(err, stream) {
 		//sys.puts(sys.inspect(stream));
 			callback(err, stream);
-	});	});
+		});	
+	});
 }
 exports.parse = parse;
 
@@ -120,10 +126,14 @@ function applyOverrides(err, stream, metas, origin, options, callback) {
 		
 		bOrigin = makePath(origin, over);
 		loader(origin, function(err, source) {
-		tokenize(source, options, function(err, stream) {
-		applyOverrides(err, stream, metas, bOrigin, options, 
-				function(err, stream) {	
-					callback(err, stream);
+			if (err) {
+				callback(err);
+				return;
+			}
+			tokenize(source, options, function(err, stream) {
+				applyOverrides(err, stream, metas, bOrigin, options, 
+						function(err, stream) {	
+							callback(err, stream);
 		});	}); });
 	} else if (Object.keys(metas).join("") != "") { 
 		// base template and metas, apply metas and out
@@ -139,9 +149,9 @@ function applyOverrides(err, stream, metas, origin, options, callback) {
 				out.push(chunk);
 			}
 		});
-		callback(err, out);
+		callback(undefined, out);
 	} else { // Base template, no metas - just clean metas
-		cleanup(err, stream, 'meta', function(err, stream) {
+		cleanup(undefined, stream, 'meta', function(err, stream) {
 				callback(err, stream);
 		});
 	}

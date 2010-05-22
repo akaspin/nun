@@ -40,15 +40,23 @@ function compile(origin, options, callback) {
 					callback(undefined, fn);
 				},
 				function(cb) { // setter
-					make(origin, options, function(fn) {
+					make(origin, options, function(err, fn) {
+						if (err) {
+							callback(err);
+							return;
+						}
 						cb(fn);
 					});
 				}
 			);
 		} else {
 			// Caching disabled - make and out
-			make(origin, options, function(fn) {
-				callback(undefined, fn);
+			make(origin, options, function(err, fn) {
+				if (err) {
+					callback(err);
+					return;
+				}
+				callback(fn);
 			});
 		}
 	});
@@ -57,7 +65,12 @@ exports.compile = compile;
 
 function render(origin, context, options, callback){
 	compile(origin, options, function(err, template) {
-		callback(err, template(context));
+		if (err) {
+			callback(err);
+			return;
+		}
+		
+		callback(undefined, template(context));
 	});
 }
 exports.render = render;
@@ -81,8 +94,10 @@ exports.setFilter = setFilter;
  */
 function make(origin, options, callback){
 	parser.parse(origin, options, function(err, stream) {
+		if (err) return	callback(err);
+		
 		compiler.compile(stream, function(fn) {
-			callback(fn);
+			callback(undefined, fn);
 		});
 	});
 }
