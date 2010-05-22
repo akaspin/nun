@@ -65,7 +65,6 @@ function parseText(source, origin, customOptions, callback) {
 	
 	if (customOptions) {
 		options.compress = customOptions.compress != false ? true : false;
-		
 		if (customOptions.filters) {
 			for (var i in customOptions.filters) 
 				options.filters[i] = customOptions.filters[i];
@@ -329,6 +328,13 @@ function tokenize(source, options, callback) {
 		}
 		return text.replace(arguments.callee.sRE, '\\$1');
 	};
+	
+	if(options.compress) {
+		source = source.
+			replace(/  */g, ' ')
+			.replace(/\n /g, '\n')
+			.replace(/\n\n*/g, '\n');
+	}
 	
 	var tokenRe;
 	var opRe;

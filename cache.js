@@ -3,6 +3,8 @@
  * "dog-pile effect".
  */
 
+//var sys = require("sys"); 
+
 cache = {};
 locks = {};
 needFlush = [];
@@ -75,6 +77,7 @@ exports.flush = flush;
 
 // private
 function put(key, value) {
+	cache[key] = value;
 	locks[key].forEach(function(action) {
 		action(value);
 	});
