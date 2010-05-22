@@ -8,18 +8,18 @@ var gets = 0;
 for (var i = 0; i < 4; i++) {
 	var key = i.toString();
 	for (var j = 0; j < 1000; j++) {
-		cache(key, 
-				function(value) {
-					if (value == key) {
-						gets++;
-					}
-				}, 
-				function(callback) {
-					setTimeout(function(){
-						renders++;
-						callback(key);
-					}, 200);
-				});
+		cache.get(key, 
+			function(value) {
+				if (value == key) {
+					gets++;
+				}
+			}, 
+			function(callback) {
+				setTimeout(function(){
+					renders++;
+					callback(key);
+				}, 200);
+			});
 	}
 }
 

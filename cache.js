@@ -5,6 +5,7 @@
 
 cache = {};
 locks = {};
+needFlush = [];
 
 /**
  * Try to get value from cache for key.
@@ -48,7 +49,29 @@ function get(key, getter, setter) {
 		});
 	}
 }
-module.exports = get;
+exports.get = get;
+
+/**
+ * Flush all cache keys with prefix. This operation will be executed
+ * after all locks with this prefix is served. 
+ * @param prefix Prefix of keys. If not defined - all cache will flushed.
+ */
+function flush(prefix) {
+	prefix = (prefix || "");
+	
+	Object.keys(locks).forEach(function(lock) {
+		if (lock.indexOf(prefix) == 0) {
+			needFlush.push(lock);
+		}
+	});
+	// delete all not locked keys in cache
+	for (var key in cache) {
+		if (key.indexOf(prefix) == 0 && needFlush.indexOf(key) == -1) {
+			delete cache[key];
+		}
+	}
+}
+exports.flush = flush;
 
 // private
 function put(key, value) {
@@ -56,4 +79,9 @@ function put(key, value) {
 		action(value);
 	});
 	delete locks[key];
+	var kill = needFlush.indexOf(key);
+	if (kill != -1) {
+		delete cache[key];
+		needFlush.splice(kill, 1);
+	}
 }

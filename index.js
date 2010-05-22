@@ -35,15 +35,15 @@ function compile(origin, options, callback) {
 				key += crypto.createHash("sha1").
 						update(options).digest("hex");
 			}
-			cache(key,
-					function(fn) { // getter
-						callback(undefined, fn);
-					},
-					function(cb) { // setter
-						make(origin, options, function(fn) {
-							cb(fn);
-						});
-					}
+			cache.get(key,
+				function(fn) { // getter
+					callback(undefined, fn);
+				},
+				function(cb) { // setter
+					make(origin, options, function(fn) {
+						cb(fn);
+					});
+				}
 			);
 		} else {
 			// Caching disabled - make and out
