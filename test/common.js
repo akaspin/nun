@@ -35,7 +35,6 @@ exports.test = function(name, context, options, callback) {
 	}
 	fixture.context = context ? context : overFixture.context;
 	fixture.options = options ? options : overFixture.options;
-//	sys.debug(sys.inspect(options));
 
 	nun.render(file(name), fixture.context, fixture.options, 
 			function(err, output){
@@ -46,6 +45,7 @@ exports.test = function(name, context, options, callback) {
 			.addListener('data', function(data){ buffer += data; })
 			.addListener('end', function(){ 
 				ended = true;
+				//sys.debug(buffer);
 				assertFile(buffer, name); 
 			});
 	});
