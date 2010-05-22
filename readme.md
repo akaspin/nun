@@ -559,9 +559,16 @@ compile-phase filters, you can compress all whitespace in template by setting
 
     nun.render(__dirname + "/file.html", {}, { compress: true }, ...);
     
-## Why Nun is Nun?
+## Why Nun...
 
-Nun architecture a bit similar to Mu. "Noon" is the letter of the Phoenician 
+### Uses absolute paths?
+
+For independence. For example, if you write your library using *nun*, a single 
+global way will only interfere. 
+
+### ... is Nun?
+
+Nun architecture a bit similar to Mu. "Nun" is the letter of the Phoenician 
 alphabet, corresponding to the Greek "Nu", which follows the "Mu".
  
 
