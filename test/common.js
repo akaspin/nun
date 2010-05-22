@@ -30,9 +30,13 @@ var ended = false;
 
 exports.test = function(name, context, options, callback) {
 	var fixture = {context: {}, options: {}};
-	if (!context && !options) {
-		fixture = require("./fixtures/" + name);
+	if (!context || !options) {
+		overFixture = require("./fixtures/" + name);
 	}
+	fixture.context = context ? context : overFixture.context;
+	fixture.options = options ? options : overFixture.options;
+//	sys.debug(sys.inspect(options));
+
 	nun.render(file(name), fixture.context, fixture.options, 
 			function(err, output){
 		if (err) throw err;
@@ -42,7 +46,6 @@ exports.test = function(name, context, options, callback) {
 			.addListener('data', function(data){ buffer += data; })
 			.addListener('end', function(){ 
 				ended = true;
-//				sys.debug("!" + buffer + "!");
 				assertFile(buffer, name); 
 			});
 	});

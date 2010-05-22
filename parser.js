@@ -23,8 +23,12 @@ var defaultFilters = {
 				.replace(/\n /g, '\n')
 				.replace(/\n\n*/g, '\n')
         		);
-    }
+    },
+    undefinedFilter: function(data, callback) {
+		callback(undefined, data);
+	}
 };
+exports.defaultFilters = defaultFilters;
 
 /**
  * Parses template file to tokenized stream.
@@ -257,8 +261,9 @@ function applyFilters(err, stream, options, callback) {
 		if (collected.length) {
 			var actions = collected.map(function(sign) {
 				return function(callback) {
-					options.filters[sign.filter](
-							sign.value,	function(err, value) {
+					(options.filters[sign.filter] || 
+					 options.filters.undefinedFilter)
+							(sign.value, function(err, value) {
 						callback(err, value, sign.id, sign.fId);
 					});
 				};

@@ -463,15 +463,12 @@ Nun includes number basic filters:
 * `compress` - Compresses all multiple spaces to single, trims lines and 
   replaces multiple line endings with single.
   
-#### Third-party filters
-
-* [nun-v](http://github.com/akaspin/nun-v) - Static content versioning
 
 #### Custom filters
 
-You can define your own filters. To do this, place them in the section "filters"
-in the options. For example, imaginary "toUpperCase" may be defined by 
-following way:
+You can define your own filters or override default filters. To do this, 
+place them in the section "filters" in the options. For example, imaginary 
+"toUpperCase" may be defined by following way:
 
     var filters = {
         toUpperCase: function(data, callback) {
@@ -509,6 +506,23 @@ Template:
 Output:
 
     <some text>
+    
+Instead define filters for every template, you can set a filter for all 
+templates:
+
+    nun.setFilter('toUpperCase', function(data, callback) {
+        callback(undefined, data.toUpperCase());
+    });
+
+After that `toUpperCase` will acts as default filter. 
+
+`setFilter` takes two arguments: name of filter, and filter. This operation 
+will reset the entire cache of *nun*. I do not recommend using it after 
+compilation of any template.
+
+#### Third-party filters
+
+* [nun-v](http://github.com/akaspin/nun-v) - Static content versioning
     
 ### Tag shapeshifting
 
@@ -565,7 +579,7 @@ compile-phase filters, you can compress all whitespace in template by setting
     
 ## Why Nun...
 
-### Uses absolute paths?
+### ... uses absolute paths?
 
 For independence. For example, if you write your library using *nun*, a single 
 global way will only interfere. 

@@ -53,6 +53,25 @@ function compile(origin, options, callback) {
 		}
 	});
 }
+exports.compile = compile;
+
+function render(origin, context, options, callback){
+	compile(origin, options, function(err, template) {
+		callback(err, template(context));
+	});
+}
+exports.render = render;
+
+/**
+ * Add compile-phase filter. Will flush all cache.
+ * @param name Filter name
+ * @param filter Filter
+ */
+function setFilter(name, filter) {
+	cache.flush();
+	parser.defaultFilters[name] = filter;
+}
+exports.setFilter = setFilter;
 
 /**
  * Actually makes all 
@@ -67,13 +86,4 @@ function make(origin, options, callback){
 		});
 	});
 }
-exports.compile = compile;
-
-function render(origin, context, options, callback){
-	compile(origin, options, function(err, template) {
-		callback(err, template(context));
-	});
-}
-exports.render = render;
-
 
