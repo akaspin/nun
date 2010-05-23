@@ -56,7 +56,7 @@ function compile(origin, options, callback) {
 					callback(err);
 					return;
 				}
-				callback(fn);
+				callback(undefined, fn);
 			});
 		}
 	});
@@ -94,7 +94,10 @@ exports.setFilter = setFilter;
  */
 function make(origin, options, callback){
 	parser.parse(origin, options, function(err, stream) {
-		if (err) return	callback(err);
+		if (err) {
+			callback(err);
+			return;
+		}
 		
 		compiler.compile(stream, function(fn) {
 			callback(undefined, fn);
