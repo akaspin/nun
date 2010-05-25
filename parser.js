@@ -339,6 +339,15 @@ function tokenize(source, options, callback) {
 		return text.replace(arguments.callee.sRE, '\\$1');
 	};
 	
+	// replace all unneeded characters
+	source = source
+		.replace(/\\+/g, '\\\\')
+		.replace(/\r/g, "")
+		.replace(/\t/g, '    ')
+		.replace(/"/g, "\\\"")
+		.replace(/ +\n/g, '\n');
+	
+	
 	if(options.compress == true) {
 		source = source.
 			replace(/  */g, ' ')
@@ -420,20 +429,12 @@ function tokenize(source, options, callback) {
  * 		and loaded string. 
  */
 function loader(file, callback) {
-	fs.readFile(file, 'binary', function(err, contents) {
+	fs.readFile(file, 'utf8', function(err, contents) {
 		if (err) {
 			callback(err);
-		} else {
-			var buf = new Buffer(contents.length);
-			buf.write(contents, 'binary', 0);
-			var output = buf.toString("utf8")
-					.replace(/\\+/g, '\\\\')
-					.replace(/\r/g, "")
-					.replace(/\t/g, '    ')
-					.replace(/"/g, "\\\"")
-					.replace(/ +\n/g, '\n');
-			callback(undefined, output);
-		}
+			return;
+		} 
+		callback(undefined, contents);
 	});
 };
 
