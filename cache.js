@@ -38,7 +38,7 @@ needFlush = [];
  * 		Takes one argument - callback. Callback takes one argument too -
  * 		generated value.
  */
-function get(key, getter, setter) {
+function operate(key, getter, setter) {
 	if (key in cache) {
 		getter(cache[key]);
 	} else if (key in waiters) { // no cache look for waiters
@@ -51,7 +51,7 @@ function get(key, getter, setter) {
 		});
 	}
 }
-exports.get = get;
+exports.operate = operate;
 
 /**
  * Flush all cache keys with prefix. This operation will be executed
