@@ -6,7 +6,7 @@
 //var sys = require("sys"); 
 
 cache = {};
-locks = {};
+waiters = {};
 needFlush = [];
 
 /**
@@ -41,11 +41,11 @@ needFlush = [];
 function get(key, getter, setter) {
 	if (key in cache) {
 		getter(cache[key]);
-	} else if (key in locks) { // no cache look for locks
-		locks[key].push(getter);
-	} else { // no cache, no locks - executing setter
-		locks[key] = [];
-		locks[key].push(getter);
+	} else if (key in waiters) { // no cache look for waiters
+		waiters[key].push(getter);
+	} else { // no cache, no waiters - executing setter
+		waiters[key] = [];
+		waiters[key].push(getter);
 		setter(function(value) {
 			put(key, value);
 		});
@@ -55,15 +55,15 @@ exports.get = get;
 
 /**
  * Flush all cache keys with prefix. This operation will be executed
- * after all locks with this prefix is served. 
+ * after all waiters with this prefix is served. 
  * @param prefix Prefix of keys. If not defined - all cache will flushed.
  */
 function flush(prefix) {
 	prefix = (prefix || "");
 	
-	Object.keys(locks).forEach(function(lock) {
-		if (lock.indexOf(prefix) == 0) {
-			needFlush.push(lock);
+	Object.keys(waiters).forEach(function(waiter) {
+		if (waiter.indexOf(prefix) == 0) {
+			needFlush.push(waiter);
 		}
 	});
 	// delete all not locked keys in cache
@@ -78,10 +78,10 @@ exports.flush = flush;
 // private
 function put(key, value) {
 	cache[key] = value;
-	locks[key].forEach(function(action) {
+	waiters[key].forEach(function(action) {
 		action(value);
 	});
-	delete locks[key];
+	delete waiters[key];
 	var kill = needFlush.indexOf(key);
 	if (kill != -1) {
 		delete cache[key];
