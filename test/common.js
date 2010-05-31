@@ -12,17 +12,11 @@ file = exports.file = function(name) {
 
 assertFile = exports.assertFile = function(actual, name) {
 	file = path.normalize(__dirname + "/expects/" + name + ".html");
-	fs.readFile(file, 'binary', function(err, contents) {
+	fs.readFile(file, 'utf8', function(err, expected) {
 		if (err) {
 			throw err;
-		} else {
-			var buf = new Buffer(contents.length);
-			buf.write(contents, 'binary', 0);
-			var expected = buf.toString("utf8");
-			
-			//sys.debug(expected);
-			assert.equal(actual, expected);
-		}
+		} 
+		assert.equal(actual, expected);
 	});
 };
 
