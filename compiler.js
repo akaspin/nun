@@ -1,7 +1,6 @@
 var sys = require("sys");
+var Script = process.binding('evals').Script;
 var HStream = require("./hstream").HStream;
-
-//var baseProto = ({}).__proto__;
 
 /**
  * Compile parsed template to native JS function.
@@ -11,8 +10,7 @@ var HStream = require("./hstream").HStream;
  */
 function compile(stream, callback) {
 	var codeStart = 
-		'(function(context) {\n' +
-//			'context = deepClone(context || {});\n' +
+		'__fn=function(context) {\n' +
 			'context = context || {};\n' +
 			'var HS = new HStream();\n' +
 			'var target = context;\n' +
@@ -22,7 +20,7 @@ function compile(stream, callback) {
 				'function() {HS.end("");}];\n' +
 				'for(var i=0;i<__a.length;i++){__a[i]()}\n' +
 			'});\n' +
-		'return HS; })';
+		'return HS; }';
 	
 	var code = codeStart;
 
@@ -55,9 +53,15 @@ function compile(stream, callback) {
 	});
 	
 	//sys.debug(code+ codeEnd);
-	var fn = eval(code + codeEnd);
-	
-	callback(fn);
+	callback(Script.runInNewContext(code + codeEnd, 
+				   {HStream: HStream,
+					section: section,
+					sectionNormal: sectionNormal,
+					sectionInverted: sectionInverted,
+					lookup: lookup,
+					unescaped: unescaped,
+					process: process }
+	));
 }
 exports.compile = compile;
 
@@ -117,7 +121,6 @@ function sectionNormal(hStream, id, target, context, action) {
 		for (var i = 0; i < target.length; i++) {
 			var subid = streamId + "/" + i;
 			hStream.map(subid);
-			//var oproto = insertProto(deepClone(target[i]), context);
 			action(subid, target[i]);
 			hStream.end(subid);
 		}
@@ -135,7 +138,6 @@ function sectionNormal(hStream, id, target, context, action) {
 		if (!Object.keys(target).length){
 			hStream.write(id, "");
 		} else {
-			//var oproto = insertProto(deepClone(target), context);
 			action(id + "/", target);
 			hStream.end(id);
 		}
@@ -178,13 +180,21 @@ function sectionInverted(hStream, id, target, context, action) {
  * @param context Context
  */
 function lookup(hStream, id, target, context) {
+	function escapeReplace (char) {
+		switch (char) {
+	    	case '<': return '&lt;';
+	    	case '>': return '&gt;';
+	    	case '&': return '&amp;';
+	    	case '"': return '&quot;';
+	    	default: return char;
+		}
+	};
 	function out(string) {
 		return typeof string === 'undefined' ? '' : string.toString()
 				.replace(/[&<>"]/g, escapeReplace);
 	};
 	if (typeof target === 'function'){ // Lambda
 		var target = target(context);
-		//var oproto = insertProto(deepClone(target), context);
 		if (typeof target === 'function') { // Async
 			hStream.lambda(id, function(data, callback) {
 				target(context, function(err, data) {
@@ -198,16 +208,6 @@ function lookup(hStream, id, target, context) {
 		hStream.write(id, out(target));
 	}
 }
-
-function escapeReplace (char) {
-	switch (char) {
-    	case '<': return '&lt;';
-    	case '>': return '&gt;';
-    	case '&': return '&amp;';
-    	case '"': return '&quot;';
-    	default: return char;
-	}
-};
 
 /**
  * Some as lookup. But not escape HTML characters.
@@ -223,7 +223,6 @@ function unescaped(hStream, id, target, context) {
 	};
 	if (typeof target === 'function'){ // Lambda
 		var target = target(context);
-		//var oproto = insertProto(deepClone(target), context);
 		if (typeof target === 'function') { // Async
 			hStream.lambda(id, function(data, callback) {
 				target(context, function(err, data) {
@@ -238,34 +237,3 @@ function unescaped(hStream, id, target, context) {
 	}
 }
 
-//function insertProto(obj, newProto, replaceProto) {
-//	replaceProto = replaceProto || baseProto;
-//	var proto = obj.__proto__;
-//	while (proto !== replaceProto) {
-//		obj = proto;
-//		proto = proto.__proto__;
-//	}
-//	obj.__proto__ = newProto;
-//	return obj;
-//};
-//
-//
-//function deepClone(obj) {
-//	var newObj = copy(obj);
-//	var newObjProto = newObj;
-//	var proto = obj.__proto__;
-//	while (proto != baseProto) {
-//		newObjProto.__proto__ = copy(proto);
-//		newObjProto = newObjProto.__proto__;
-//		proto = proto.__proto__;
-//	}
-//	return newObj;
-//}
-//
-//function copy(obj) {
-//	var newObj = {};
-//	for (var k in obj) {
-//		if (obj.hasOwnProperty(k)) { newObj[k] = obj[k]; }
-//	}
-//	return newObj;
-//}
