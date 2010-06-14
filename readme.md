@@ -587,6 +587,9 @@ global way will only interfere.
 ### ... is Nun?
 
 Nun architecture a bit similar to Mu. "Nun" is the letter of the Phoenician 
-alphabet, corresponding to the Greek "Nu", which follows the "Mu".
+alphabet that means snake or fish, corresponding to the Greek "Nu", which 
+follows the "Mu".
+
+
  
 

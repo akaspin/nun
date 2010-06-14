@@ -8,7 +8,7 @@ var gets = 0;
 for (var i = 0; i < 4; i++) {
 	var key = i.toString();
 	for (var j = 0; j < 1000; j++) {
-		cache.get(key, 
+		cache.operate(key, 
 			function(value) {
 				if (value == key) {
 					gets++;
