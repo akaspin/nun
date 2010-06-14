@@ -2,6 +2,16 @@ var sys = require("sys");
 var Script = process.binding('evals').Script;
 var HStream = require("./hstream").HStream;
 
+var bundle = {
+	HStream : HStream,
+	section : section,
+	sectionNormal : sectionNormal,
+	sectionInverted : sectionInverted,
+	lookup : lookup,
+	unescaped : unescaped,
+	process : process
+};
+
 /**
  * Compile parsed template to native JS function.
  * @param stream Parsed template. Represented as Array of 
@@ -53,15 +63,7 @@ function compile(stream, callback) {
 	});
 	
 	//sys.debug(code+ codeEnd);
-	callback(Script.runInNewContext(code + codeEnd, 
-				   {HStream: HStream,
-					section: section,
-					sectionNormal: sectionNormal,
-					sectionInverted: sectionInverted,
-					lookup: lookup,
-					unescaped: unescaped,
-					process: process }
-	));
+	callback(Script.runInNewContext(code + codeEnd, bundle));
 }
 exports.compile = compile;
 

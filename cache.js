@@ -5,9 +5,9 @@
 
 //var sys = require("sys"); 
 
-cache = {};
-waiters = {};
-needFlush = [];
+var cache = {};
+var waiters = {};
+var needFlush = [];
 
 /**
  * Try to get value from cache for key.
