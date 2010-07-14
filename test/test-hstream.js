@@ -3,9 +3,9 @@ var assert =  require('assert');
 var HStream = require("../hstream").HStream;
 
 var lambda = function(data, callback) {
-	setTimeout(function() {
-		callback("[" + data + "]");
-	},300);
+    setTimeout(function() {
+        callback("[" + data + "]");
+    },300);
 };
 
 var buffer = '';
@@ -15,11 +15,11 @@ var ended = false;
 var hs = new HStream();
 hs
 .addListener('data', function(data) {
-	buffer += data + ":";
+    buffer += data + ":";
 })
 .addListener('end', function() {
-	ended = true;
-	assert.equal(buffer, expect);
+    ended = true;
+    assert.equal(buffer, expect);
 });
 
 hs.map('0');  
@@ -50,5 +50,5 @@ hs.write('4', '<4>');
 hs.write('1/1', '<1/1>');
 
 process.addListener("exit", function () {
-	  assert.ok(ended);
+      assert.ok(ended);
 });
