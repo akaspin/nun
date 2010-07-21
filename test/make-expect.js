@@ -1,4 +1,3 @@
-var sys = require("sys");
 var path = require("path");
 var nun = require("../");
 var fs = require("fs");
@@ -6,15 +5,16 @@ var Buffer = require('buffer').Buffer;
 
 var example = process.argv[2];
 var nofixture = process.argv[3];
-sys.debug(example);
-sys.debug(nofixture);
+
+console.log("Example: %s", example);
+console.log("No fixture: %s", nofixture);
 
 if (!example) {
   process.exit(0);
 }
 
-var f = path.normalize(__dirname + "/fixtures/"+example+".html"); 
-var e = fs.openSync(path.normalize(__dirname + "/expects/"+example+".html"), 'w'); 
+var f = path.normalize(__dirname + "/fixtures/" + example + ".html"); 
+var e = path.normalize(__dirname + "/expects/" + example + ".html"); 
 
 var fixture = {context: {}, options: {}};
 if (!nofixture) {
@@ -27,14 +27,13 @@ nun.render(f, fixture.context, fixture.options,
     
     var buffer = '';
     output
-        .addListener('data', function(data){ 
+        .on('data', function(data){ 
             buffer += data; 
         })
-        .addListener('end', function(){ 
-            var b = new Buffer(Buffer.byteLength(buffer, 'utf8'));
-            b.write(buffer, 'utf8');
-            sys.debug(b);
-            
-            fs.write(e, b, 0, Buffer.byteLength(buffer, 'utf8'), 0);
+        .on('end', function(){
+            fs.writeFile(e, buffer, function(err) {
+                if (err) throw err;
+                console.log(buffer);
+            });
         });
 });
