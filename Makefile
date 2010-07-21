@@ -8,8 +8,14 @@ PASS=echo PASS
 
 test:
 	@for i in test/test-*.js; do \
-	  echo -n "$$i: "; \
-	  $(NODE) $$i > /dev/null && $(PASS) || $(FAIL); \
+		echo -n "$$i: "; \
+		$(NODE) $$i > /dev/null && $(PASS) || $(FAIL); \
 	done
 
-.PHONY: test
+benchmark:
+	@for i in test/benchmark-*.js; do \
+		echo -n "$$i: "; \
+		$(NODE) $$i; \
+	done
+
+.PHONY: test benchmark

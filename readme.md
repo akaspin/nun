@@ -77,7 +77,11 @@ Instead of rendering the template can be compiled for future use.
 To run the tests:
 
     cd where/is/nun
-    make    
+    make
+    
+... And for run bencmark:
+
+    make benchmark 
 
 ## Basic syntax
 
@@ -577,19 +581,28 @@ compile-phase filters, you can compress all whitespace in template by setting
 
     nun.render(__dirname + "/file.html", {}, { compress: true }, ...);
     
-## Why Nun...
+## How Nun...
 
-### ... uses absolute paths?
+### ... use paths?
 
-For independence. For example, if you write your library using *nun*, a single 
-global way will only interfere. 
+Nun uses absolute paths for independence. For example, if you write your 
+library using *nun*, a single global way will only interfere. 
 
-### ... is Nun?
+### ... is fast?
+
+So since version 0.1.101 *nun* totally refactored. On my test VM slightly 
+tuned "million-comlex" benchmark from mustache taken *about 45 seconds*.
+
+You can run benchmark as follows:
+
+    cd where/is/nun
+    make benchmark
+
+### ... become Nun?
 
 Nun architecture a bit similar to Mu. "Nun" is the letter of the Phoenician 
 alphabet that means snake or fish, corresponding to the Greek "Nu", which 
 follows the "Mu".
-
 
  
 
