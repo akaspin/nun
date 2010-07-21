@@ -1,8 +1,10 @@
-In work, Version 0.1.11
+2010.06.21, Version 0.1.11
 
 * Serious performance boost - faster three times
 
 * Remove obsolete tests and files
+
+* Add benchmark
 
 2010.06.15, Version 0.1.10
 
