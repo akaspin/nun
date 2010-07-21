@@ -2,131 +2,135 @@ var sys = require("sys");
 var Script = process.binding('evals').Script;
 var HStream = require("./hstream").HStream;
 
+// Execution context
 var bundle = {
     HStream : HStream,
     section : section,
-    sectionNormal : sectionNormal,
-    sectionInverted : sectionInverted,
+    section_section : sectionMannerNormal,
+    section_inverted : sectionMannerInverted,
     lookup : lookup,
-    unescaped : unescaped,
+    lookup_lookup : lookupMannerNormal,
+    lookup_unescaped : lookupMannerUnescaped,
     process : process
 };
 
+// Code blocks
+var codeStart = 
+    "__fn=function(context) {\n" +
+		"context = context || {};\n" +
+		"var hStream = new HStream();\n" +
+		"var target = context;\n" +
+		"var parent = hStream.root;\n" +
+		"process.nextTick(function() {" +
+		    "[\n"; 
+var codeEnd = 
+            "function() { parent.end(); }]\n" +
+            "   .forEach(function(__a){ __a(); });\n" +
+        "});\n" + // nexTick end
+    "return hStream; }\n"; //
+
 /**
- * Compile parsed template to native JS function.
- * @param stream Parsed template. Represented as Array of 
- *         {op:string, value: string}
- * @param callback Function that takes compiled function.
+ * 
+ * @param stream
+ * @param callback
  */
 function compile(stream, callback) {
-    var codeStart = 
-        '__fn=function(context) {\n' +
-            'context = context || {};\n' +
-            'var HS = new HStream();\n' +
-            'var target = context;\n' +
-            'var prefix = "";\n' +
-            'process.nextTick(function() { var __a = [\n';
-    var codeEnd = 
-                'function() {HS.end("");}];\n' +
-                'for(var i=0;i<__a.length;i++){__a[i]()}\n' +
-            '});\n' +
-        'return HS; }';
-    
-    var code = codeStart;
-
-    var resolveTarget = function(name) {
+    function resolveTarget(name) {
         return (name.charAt(0) === '.' ? 
                 "context" + name : "target." + name);
-    };
+    }
+    
+    var code = codeStart;
+    
+    // Walk through stream 
     stream.forEach(function(chunk) {
         if (chunk.op === 'raw') {
-            code += 'function() {HS.map(prefix+i); HS.write(prefix+i,"' +
-                    chunk.value.replace(/\n/g, "\\n") 
-                    + '");},\n';
+            // Just raw chunk
+            code += 'function() { parent.map().write("' +
+                chunk.value.replace(/\n/g, "\\n") 
+                + '"); },\n';
         } else if (chunk.op === 'lookup' || chunk.op === 'unescaped') {
-            code += 'function(){HS.map(prefix+i);' + 
-                chunk.op +
-                '(HS,prefix+i,' +
-                resolveTarget(chunk.value) +
-                ',target);},\n';
-        } else if (chunk.op === 'section') {
-            code += 'function() {section(HS,sectionNormal,prefix+i,' +
+            // Lookup or unescaped chunk
+            code += 'function() { lookup(lookup_' + chunk.op +
+                ', parent.map(), ' + resolveTarget(chunk.value) +
+                ', target); },\n';
+        } else if (chunk.op === 'section' || chunk.op === 'inverted') {
+            // Section
+            code += '   function() { section(section_' + chunk.op +
+            ', parent.map(), ' +
             resolveTarget(chunk.value) +
-            ',target,function(prefix,target){var __a = [\n';
-        } else if (chunk.op === 'inverted') {
-            code += 'function() {section(HS,sectionInverted,prefix+i,' +
-            resolveTarget(chunk.value) +
-            ',target,function(prefix,target){var __a = [\n';
+            ', target, function(chunk, target) { [\n';
         } else if (chunk.op === 'end') {
-            code += ']; for(var i=0;i<__a.length;i++){__a[i]()} }); },\n';
+            code += '   ].forEach(function(__a){__a();})})},\n';
         }
     });
     
-    //sys.debug(code+ codeEnd);
+    //console.log(code + codeEnd);
+    
+    // Call callback
     callback(Script.runInNewContext(code + codeEnd, bundle));
 }
 exports.compile = compile;
 
-// private
 /**
- * Section evaluation. Behaviour depends type of target parameter.
- * 
- * @param hStream HStream instance
- * @param manner Normal or inverted section: sectionNormal or sectionInverted.
- *         This calls if context is not function or if function is not Lambda. 
- * @param id Root ID
- * @param target Lookup for in context
- * @param context Local context
- * @param action Bundle of actions
+ * Section evaluation
+ * @param manner Section evaluation manner: Normal or Inverted
+ * @param {Chunk} chunk Target chunk in hStream
+ * @param target Variable
+ * @param context Up-one context
+ * @param {Array} action Bundle of actions
  */
-function section(hStream, manner, id, target, context, action) {
-    hStream.map(id); // mapping root
-    
-    if (typeof target === 'function') { // Function
+function section(manner, chunk, target, context, action) {
+    if (typeof target === 'function') {
+        // Target is function
         var target = target(context);
-        if (typeof target === 'function') { // Async function
+        
+        // Check for async
+        if (typeof target === 'function') {
+            // It's async function. Let's do it
             target(context, function(err, target) {
-                if (typeof target === 'function') {// lambda
-                    hStream.lambda(id, function(data, callback) {
+                // Check - is we have lambda
+                if (typeof target === 'function') {
+                    // Ohh. It's lambda
+                    chunk.lambda = function(data, callback) {
                         target(data, context, function(data) {
                             callback(typeof data === 'undefined' ? '' 
                                     : data.toString());
                         });
-                    });
-                    action(id + "/", context);
-                    hStream.end(id);
-                } else { // No lambda
-                    manner(hStream, id, target, context, action);
+                    };
+                    action(chunk.map(), context);
+                    chunk.end();
+                } else {
+                    // No lambda - just async function
+                    manner(chunk, target, context, action);
                 }
             });
-        } else { // Sync function
-            manner(hStream, id, target, context, action);
+        } else {
+            // Sync function - run it
+            manner(chunk, target, context, action);
         }
-    } else { // Just context
-
-        manner(hStream, id, target, context, action);
+    } else {
+        // Just context
+        manner(chunk, target, context, action);
     }
 }
 
 /**
- * Section evaluation with data.
- * 
- * @param hStream HStream instance
- * @param id Root ID
- * @param target Lookup for in context
- * @param context Local context
- * @param action Bundle of actions
+ * Normal section evaluation manner with data
+ * @param {Chunk} chunk Target chunk in hStream
+ * @param target Local context
+ * @param context Up-one context
+ * @param {Array} action Bundle of actions
  */
-function sectionNormal(hStream, id, target, context, action) {
-    if (target instanceof Array && target.length) {
-        var streamId = id;
+function sectionMannerNormal(chunk, target, context, action) {
+    if (Array.isArray(target) && target.length) {
+        // target is non empty array
         for (var i = 0; i < target.length; i++) {
-            var subid = streamId + "/" + i;
-            hStream.map(subid);
-            action(subid, target[i]);
-            hStream.end(subid);
+            var act = chunk.map();
+            action(act, target[i]);
+            act.end();
         }
-        hStream.end(id);
+        chunk.end();
     } else if (
         target !== undefined && 
         target != "" &&
@@ -134,54 +138,79 @@ function sectionNormal(hStream, id, target, context, action) {
         target != false && 
         target != null &&
         typeof target !== 'object') {
-            action(id + "/", context);
-            hStream.end(id);
-    } else if (typeof target === 'object' && target != null) {
-        if (!Object.keys(target).length){
-            hStream.write(id, "");
+        
+        action(chunk, context);
+        chunk.end();
+    } else if (typeof target === 'object' && target !== null && 
+            !!Object.keys(target).length) {
+        action(chunk, target);
+        chunk.end();
+    } else {
+        chunk.write("");
+    }
+}
+
+/**
+ * Inverted section evaluation manner with data
+ * @param {Chunk} chunk Target chunk in hStream
+ * @param target Local context
+ * @param context Up-one context
+ * @param {Array} action Bundle of actions
+ */
+function sectionMannerInverted(chunk, target, context, action) {
+    if (target == undefined || target == "" || target == false
+            || target == null || target == 0
+            || (target instanceof Array && !target.length)
+            || (typeof target === 'object' && !Object.keys(target).length)) {
+        action(chunk, target);
+        chunk.end();
+    } else {
+        chunk.write("");
+    }
+}
+
+/*
+ * function sectionInverted(hStream, id, target, context, action) { if (target ==
+ * undefined || target == "" || target == false || target == null || target == 0 ||
+ * (target instanceof Array && !target.length) || (typeof target === 'object' &&
+ * !Object.keys(target).length) ) { action(id + "/", target); hStream.end(id); }
+ * else { hStream.write(id, ""); } };
+ */
+
+/**
+ * Lookup for variable
+ * @param manner Lookup manner: normal or unescaped
+ * @param {Chunk} chunk Target chunk in hStream
+ * @param target Variable
+ * @param context Up-one context
+ */
+function lookup (manner, chunk, target, context) {
+    if (typeof target === 'function'){ 
+        // Target is function
+        var target = target(context);
+        if (typeof target === 'function') { 
+            // It's lambda
+            chunk.lambda = function(data, callback) {
+                target(context, function(err, data) {
+                    callback(manner(data));
+            }); };
+            chunk.write("");
         } else {
-            action(id + "/", target);
-            hStream.end(id);
+            // Not async - just run it
+            chunk.write(manner(target));
         }
     } else {
-        hStream.write(id, "");
+        // target is just variable
+        chunk.write(manner(target));
     }
-};
+}
 
 /**
- * Inverted section evaluation with data.
- * 
- * @param hStream HStream instance
- * @param id Root ID
- * @param target Lookup for in context
- * @param context Local context
- * @param action Bundle of actions
+ * Normal lookup manner - escaped
+ * @param {String} string String
+ * @returns {String} Escaped string
  */
-function sectionInverted(hStream, id, target, context, action) {
-    if (target == undefined || 
-        target == "" ||
-        target == false || 
-        target == null ||
-        target == 0 ||
-        (target instanceof Array && !target.length) ||
-        (typeof target === 'object' && !Object.keys(target).length)
-        ) {
-        action(id + "/", target);
-        hStream.end(id);
-    } else {
-        hStream.write(id, "");
-    }
-};
-
-/**
- * Lookup for variable.
- * 
- * @param hStream HStream instance
- * @param id Root ID
- * @param target Lookup for
- * @param context Context
- */
-function lookup(hStream, id, target, context) {
+function lookupMannerNormal(string) {
     function escapeReplace (char) {
         switch (char) {
             case '<': return '&lt;';
@@ -191,51 +220,16 @@ function lookup(hStream, id, target, context) {
             default: return char;
         }
     };
-    function out(string) {
-        return typeof string === 'undefined' ? '' : string.toString()
-                .replace(/[&<>"]/g, escapeReplace);
-    };
-    if (typeof target === 'function'){ // Lambda
-        var target = target(context);
-        if (typeof target === 'function') { // Async
-            hStream.lambda(id, function(data, callback) {
-                target(context, function(err, data) {
-                    callback(out(data));
-            }); });
-            hStream.write(id, "");
-        } else {
-            hStream.write(id, out(target));
-        }
-    } else {
-        hStream.write(id, out(target));
-    }
+    return typeof string === 'undefined' ? '' : string.toString()
+            .replace(/[&<>"]/g, escapeReplace);
 }
 
 /**
- * Some as lookup. But not escape HTML characters.
- * 
- * @param hStream HStream instance
- * @param id Root ID
- * @param target Lookup for
- * @param context Context
+ * Unescaped lookup manner
+ * @param {String} string String
+ * @returns {String} Unscaped string
  */
-function unescaped(hStream, id, target, context) {
-    function out (string) {
-        return typeof string === 'undefined' ? '' : string.toString();
-    };
-    if (typeof target === 'function'){ // Lambda
-        var target = target(context);
-        if (typeof target === 'function') { // Async
-            hStream.lambda(id, function(data, callback) {
-                target(context, function(err, data) {
-                    callback(out(data));
-                }); });
-            hStream.write(id, "");
-        } else {
-            hStream.write(id, out(target));
-        }
-    } else {
-        hStream.write(id, out(target));
-    }
+function lookupMannerUnescaped(string) {
+    return typeof string === 'undefined' ? '' : string.toString();
 }
 

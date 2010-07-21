@@ -3,168 +3,181 @@ var path = require("path");
 var events = require('events');
 
 /**
- * Hierarchial Stream. Heart of Nun.
+ * Chunk object
+ * @param {HStream} hStream Operating HStream
+ * @param {Chunk} parent Parent chunk
+ * @param {Integer} id Unique id
+ * @returns {Chunk}
+ */
+function Chunk(hStream, parent, id) {
+    this.hStream = hStream;
+    this.parent = parent;
+    this.id = id;
+    this.data = undefined;
+    
+    this.bounded = parent ? (parent.bounded || 
+            (typeof parent.lambda === 'function')) :
+            false;
+    this.lambda = undefined;
+}
+
+/**
+ * Maps subchunk.
+ * @param id
+ * @returns {Chunk} subchunk
+ */
+Chunk.prototype.map = function() {
+    if (Array.isArray(this.data) && this.data.length > 0) {
+        var id = this.data[this.data.length-1].id + 1;
+    } else {
+        this.data = [];
+        var id = 0;
+    }
+    var ingest = new Chunk(this.hStream, this, id);
+    this.data.push(ingest);
+    
+    return ingest;
+};
+
+/**
+ * Set end marker to chunk's stream.
+ */
+Chunk.prototype.end = function() {
+    if (!this.data) {
+        this.data = [];
+    }
+    
+    var ingest = new Chunk(this.hStream, this, null);
+    this.data.push(ingest);
+    
+    ingest.__poll();
+};
+
+/**
+ * Write data to chunk.
+ * @param {String} data 
+ */
+Chunk.prototype.write = function(data) {
+    // Check for lambda
+    if (!this.lambda) {
+        this.data = data;
+        this.__poll();
+    } else {
+        // Lambda exists
+        var lambda = this.lambda;
+        this.lambda = undefined;
+        var self = this;
+        lambda(data, function(data) {
+            self.write(data);
+        });
+    }
+};
+
+/**
+ * Polls chunk. At this point chunk data can be only string.
+ */
+Chunk.prototype.__poll = function() {
+    
+    if (this.bounded) {
+        // Chunk bounded. So bounded chunks always has parent
+        
+        // Now check completion of chunk's stream
+        if (this.parent.data.every(function(chunk) {
+            // Ok if chunk is end marker or data is String
+            
+            return ((chunk.id === null && chunk.data === undefined) || 
+                    (typeof chunk.data === 'string'));
+        }) && this.parent.data[this.parent.data.length-1].id === null) {
+            
+            // If Chunk's data completed - collect and write to parent.
+            this.parent.write(this.parent.data.reduce(function(acc, chunk) {
+                return (chunk.id === null) ? acc :
+                    acc + chunk.data;
+            }, ""));
+        }
+    } else {
+         // Chunk not bounded. 
+        if (this.__isLead()) {
+            this.hStream.__poll(this);
+        }
+    }
+};
+
+/**
+ * Check is chunk lies in lead of all streams in hierarchy 
+ * @returns true or false
+ */
+Chunk.prototype.__isLead = function() {
+    if (!this.parent) { 
+        // Root chunk
+        return true;
+    }
+    
+    if (this.parent.data[0].id === this.id) {
+        return this.parent.__isLead();
+    }
+};
+
+/**
+ * HStream
  * @returns {HStream}
- * @constructor
  */
 function HStream() {
     events.EventEmitter.call(this);
-    this.writes = [];
-    this.stream = [];
+    this.root = new Chunk(this, undefined, undefined);
     this.closed = false;
 }
 sys.inherits(HStream, events.EventEmitter);
 exports.HStream = HStream;
 
 /**
- * Map stream node. 
+ * Polls HStream from given chunk. Chunk always lead.
  * 
- * @param id String identifier in form "[parent/[parent.../]]id"
+ * @param {Chunk} chunk
  */
-HStream.prototype.map = function (id) {
-    var id = id.split("/");
-    
-    var target = this;
-    if (id.length > 1) {
-        var target = this.__getChunk(id.slice(0,-1));
-        if (target.stream === undefined) target.stream = [];
-        if (target.data === undefined) target.data = '';
+HStream.prototype.__poll = function(chunk) {
+    // Check for closed state
+    if (this.closed) {
+        return;
     }
     
-    target.stream.push({
-        id:id[id.length-1], 
-        data: undefined,
-        proc: undefined,
-        stream: undefined
-    });
-};
-
-/**
- * Set lambda to chunk.
- * 
- * @param id String identifier in form "[parent/[parent.../]]id"
- * @param lambda Function that takes two arguments: data to transform and 
- *         callback. Callback takes one argument - warped data. 
- */
-HStream.prototype.lambda = function(id, lambda) {
-    var id = id.split("/");
-    var target =this.__getChunk(id);
-    target.proc = lambda;
-    this.__process(id);
-};
-
-
-HStream.prototype.write = function(id, data) {
-    var id = id.split("/");
-    this.__write(id, data);
-};
-HStream.prototype.__write = function(id, data){
-    var chunk =this.__getChunk(id);
-    
-    if (typeof chunk.proc === 'function') { // it's lambda
-        var lambda = chunk.proc;
-        chunk.proc = undefined;
-        var self = this;
-        lambda(data, function(data) {
-            self.__write(id, data);
-        });
-    } else {
-        chunk.data = data;
-        chunk.stream = true;
-        this.__process(id);
+    // Trim recursion
+    if (chunk.bounded || chunk.lambda) {
+        return;
     }
-};
-
-HStream.prototype.__process = function(id) {
-    if (id.length == 1) {
-        this.__poll();
-    } else {
-        var parent = this.__getChunk(id.slice(0,-1));
-        var stream = parent.stream;
-        var buffer = parent.data;
-        var ended = false;
-        while (stream.length) {
-            if (stream[0].stream === true) {
-                var chunk = stream.shift();
-                buffer += chunk.data;
-            } else if (stream[0].id === '_') {
-                stream = [];
-                ended = true;
-            } else {
-                break;
-            }
-        }
-        if (!ended) {
-            parent.data = buffer;
-            this.__poll();
+    
+    // Check for end marker
+    if (chunk.id === null) {
+        // End of stream
+        
+        // Check for root stream
+        if (chunk.parent.parent) {
+            // Chunk in deep - kill parent chunk.
+            var holder = chunk.parent.parent;
+            holder.data.shift();
+            this.__poll(holder);
         } else {
-            parent.data = undefined;
-            parent.stream = undefined;
-            this.write(id.slice(0,-1).join("/"), buffer);
-            //this.__poll();
-        }
-    }
-};
-HStream.prototype.end = function(id) {
-    if (id == '' ) {
-        this.map("_");
-        this.__poll();
-    } else {
-        var streamId = id.split("/");
-        var id = id + "/_";
-        this.map(id);
-        this.__process(id.split("/"));
-    }
-};
-HStream.prototype.__poll = function() {
-    if (this.closed) return;
-    var stream = this.stream;
-    while (stream.length) {
-        if ((stream[0].data != undefined) &&
-            (stream[0].proc === undefined )) {
-            
-            if (stream[0].stream === true) {
-                if (stream[0].data.length > 0) {
-                    this.emit('data', stream[0].data);
-                }
-                stream.shift();
-            } else if (stream[0].stream instanceof Array &&
-                    stream[0].data !== '') {
-                this.emit('data', stream[0].data);
-                stream[0].data = '';
-                break;
-            } else {
-                break;
-            }
-        } else if (this.stream[0].id == '_') {
+            // Root chunk. Emit 'end' and close
             this.emit('end');
-            stream = [];
             this.closed = true;
-            break;
-        } else {
-            break;
+            return;
         }
-    }
-};
-/**
- * returns chunk for id
- * @param id Id
- * @returns
- */
-HStream.prototype.__getChunk = function(id) {
-    var stream = this.stream;
-    for (var i=0; i<id.length; i++) {
-        for (var j=0; j < stream.length; j++) {
-            if (stream[j].id == id[i]) {
-                if (i == id.length-1) {
-                    // found
-                    return stream[j];
-                } else {
-                    stream = stream[j].stream;
-                    break;
-                }
+    } else {
+        // Data chunk. 
+        
+        if (Array.isArray(chunk.data) && chunk.data.length > 0) {
+            // chunk data is Array - for recursion
+            this.__poll(chunk.data[0]);
+        } else if (typeof chunk.data === 'string') {
+            // chunk is ordinary string
+            this.emit('data', chunk.data);
+            var holder = chunk.parent;
+            holder.data.shift();
+            
+            // if holder has more chunks - poll first
+            if (holder.data.length > 0) {
+                this.__poll(holder.data[0]);
             }
         }
     }
-    return undefined;
 };
