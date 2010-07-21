@@ -116,66 +116,67 @@ function section(manner, chunk, target, context, action) {
 }
 
 /**
- * Normal section evaluation manner with data
+ * Normal section evaluation manner with data. See readme for details.
  * @param {Chunk} chunk Target chunk in hStream
  * @param target Local context
  * @param context Up-one context
  * @param {Array} action Bundle of actions
  */
 function sectionMannerNormal(chunk, target, context, action) {
-    if (Array.isArray(target) && target.length) {
-        // target is non empty array
-        for (var i = 0; i < target.length; i++) {
-            var act = chunk.map();
-            action(act, target[i]);
-            act.end();
+    if (Array.isArray(target)) {
+        // target is array
+        if (!!target.length) {
+            // Non-empty - evaluate
+            for (var i = 0; i < target.length; i++) {
+                var act = chunk.map();
+                action(act, target[i]);
+                act.end();
+            }
+            chunk.end();
+        } else {
+            // Empty - break
+            chunk.write("");
         }
-        chunk.end();
-    } else if (
-        target !== undefined && 
-        target != "" &&
-        target != 0 &&
-        target != false && 
-        target != null &&
-        typeof target !== 'object') {
-        
+    } else if (typeof target === 'object' && target !== null) {
+        // Target is Object
+        if (!!Object.keys(target).length) {
+            // Non-empty - evaluate
+            action(chunk, target);
+            chunk.end();
+        } else {
+            // Empty - break
+            chunk.write("");
+        }
+    } else if (!!target) {
+        // Just value
         action(chunk, context);
         chunk.end();
-    } else if (typeof target === 'object' && target !== null && 
-            !!Object.keys(target).length) {
-        action(chunk, target);
-        chunk.end();
     } else {
+        // Not acceptable - break
         chunk.write("");
     }
 }
 
 /**
- * Inverted section evaluation manner with data
+ * Inverted section evaluation manner with data. See readme for details.
  * @param {Chunk} chunk Target chunk in hStream
  * @param target Local context
  * @param context Up-one context
  * @param {Array} action Bundle of actions
  */
 function sectionMannerInverted(chunk, target, context, action) {
-    if (target == undefined || target == "" || target == false
-            || target == null || target == 0
-            || (target instanceof Array && !target.length)
-            || (typeof target === 'object' && !Object.keys(target).length)) {
+    if ((target instanceof Array && !target.length) ||
+        (typeof target === 'object' && target !== null && 
+                !Object.keys(target).length) || 
+         !target) {
+        // Inverted
         action(chunk, target);
         chunk.end();
     } else {
+        // Normal - skip
         chunk.write("");
     }
 }
-
-/*
- * function sectionInverted(hStream, id, target, context, action) { if (target ==
- * undefined || target == "" || target == false || target == null || target == 0 ||
- * (target instanceof Array && !target.length) || (typeof target === 'object' &&
- * !Object.keys(target).length) ) { action(id + "/", target); hStream.end(id); }
- * else { hStream.write(id, ""); } };
- */
 
 /**
  * Lookup for variable
