@@ -33,8 +33,8 @@ Basic usage is very simple:
         if (err) throw err;
         
         var buffer = '';
-        output.addListener('data', function(data){ buffer += data; })
-              .addListener('end', function(){ sys.puts(buffer) });
+        output.on('data', function(data){ buffer += data; })
+              .on('end', function(){ sys.puts(buffer) });
     });
     
 template.html
@@ -70,8 +70,8 @@ Instead of rendering the template can be compiled for future use.
         
         var buffer = '';
         template(ctx)
-            .addListener('data', function(data){ buffer += data; })
-            .addListener('end', function(){ sys.puts(buffer) });
+            .on('data', function(data){ buffer += data; })
+            .on('end', function(){ sys.puts(buffer) });
     });
     
 To run the tests:
