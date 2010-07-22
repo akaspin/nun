@@ -1,28 +1,29 @@
 var path = require("path");
 var nun = require("../");
 var fs = require("fs");
-var Buffer = require('buffer').Buffer;
 
 var example = process.argv[2];
-var nofixture = process.argv[3];
-
-console.log("Example: %s", example);
-console.log("No fixture: %s", nofixture);
+var opts = process.argv[3];
 
 if (!example) {
-  process.exit(0);
+    console.error("No example provided");
+    process.exit(0);
+}
+if (!opts) {
+    var opts = example;
 }
 
-var f = path.normalize(__dirname + "/fixtures/" + example + ".html"); 
-var e = path.normalize(__dirname + "/expects/" + example + ".html"); 
+console.log("Making fixture:");
+console.log(" Example: %s", example);
+console.log(" Options: %s\n", context);
 
-var fixture = {context: {}, options: {}};
-if (!nofixture) {
-    fixture = require("./fixtures/" + example);
-}
+var expect = path.normalize(__dirname + "/expects/" + example + ".html"); 
+var fixture = {
+    example: path.normalize(__dirname + "/fixtures/" + example + ".html"),
+    opts: require("./fixtures/" + opts)
+};
 
-nun.render(f, fixture.context, fixture.options, 
-        function(err, output){
+nun.render(fixture.example, opts.context, opts.options, function(err, output){
     if (err) throw err;
     
     var buffer = '';
@@ -31,8 +32,9 @@ nun.render(f, fixture.context, fixture.options,
             buffer += data; 
         })
         .on('end', function(){
-            fs.writeFile(e, buffer, function(err) {
+            fs.writeFile(expect, buffer, function(err) {
                 if (err) throw err;
+                
                 console.log(buffer);
             });
         });
