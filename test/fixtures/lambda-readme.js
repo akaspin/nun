@@ -1,6 +1,7 @@
 exports.context = { 
     name: "John Dow",
-    toUpperCase: function() {
+    lambda: function() {
+        
         return function(context, callback) {
             callback(undefined, function(data, context, callback) {
                 setTimeout(function(){

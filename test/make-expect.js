@@ -13,9 +13,6 @@ if (!opts) {
     var opts = example;
 }
 
-console.log("Making fixture:");
-console.log(" Example: %s", example);
-console.log(" Options: %s\n", context);
 
 var expect = path.normalize(__dirname + "/expects/" + example + ".html"); 
 var fixture = {
@@ -23,7 +20,12 @@ var fixture = {
     opts: require("./fixtures/" + opts)
 };
 
-nun.render(fixture.example, opts.context, opts.options, function(err, output){
+console.log("Making fixture:");
+console.log(" Example: %s", fixture.example);
+console.log(" Options: %s\n", opts);
+
+nun.render(fixture.example, fixture.opts.context, fixture.opts.options, 
+        function(err, output){
     if (err) throw err;
     
     var buffer = '';
@@ -32,10 +34,10 @@ nun.render(fixture.example, opts.context, opts.options, function(err, output){
             buffer += data; 
         })
         .on('end', function(){
-            fs.writeFile(expect, buffer, function(err) {
-                if (err) throw err;
-                
-                console.log(buffer);
-            });
+            console.log(buffer);
+//            fs.writeFile(expect, buffer, function(err) {
+//                if (err) throw err;
+//                console.log(buffer);
+//            });
         });
 });

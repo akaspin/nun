@@ -5,6 +5,7 @@ var HStream = require("./hstream").HStream;
 // Execution context
 var bundle = {
     HStream : HStream,
+    raw : raw,
     section : section,
     section_section : sectionMannerNormal,
     section_inverted : sectionMannerInverted,
@@ -20,11 +21,11 @@ var codeStart =
 		"context = context || {};\n" +
 		"var hStream = new HStream();\n" +
 		"var target = context;\n" +
-		"var parent = hStream.root;\n" +
+		"var chunk = hStream.root;\n" +
 		"process.nextTick(function() {" +
 		    "[\n"; 
 var codeEnd = 
-            "function() { parent.end(); }]\n" +
+            "function() { chunk.end(); }]\n" +
             "   .forEach(function(__a){ __a(); });\n" +
         "});\n" + // nexTick end
     "return hStream; }\n"; //
@@ -46,18 +47,18 @@ function compile(stream, callback) {
     stream.forEach(function(chunk) {
         if (chunk.op === 'raw') {
             // Just raw chunk
-            code += 'function() { parent.map().write("' +
+            code += 'function() { raw(chunk.map(), "' +
                 chunk.value.replace(/\n/g, "\\n") 
                 + '"); },\n';
         } else if (chunk.op === 'lookup' || chunk.op === 'unescaped') {
             // Lookup or unescaped chunk
             code += 'function() { lookup(lookup_' + chunk.op +
-                ', parent.map(), ' + resolveTarget(chunk.value) +
+                ', chunk.map(), ' + resolveTarget(chunk.value) +
                 ', target); },\n';
         } else if (chunk.op === 'section' || chunk.op === 'inverted') {
             // Section
             code += '   function() { section(section_' + chunk.op +
-            ', parent.map(), ' +
+            ', chunk.map(), ' +
             resolveTarget(chunk.value) +
             ', target, function(chunk, target) { [\n';
         } else if (chunk.op === 'end') {
@@ -65,12 +66,22 @@ function compile(stream, callback) {
         }
     });
     
-    //console.log(code + codeEnd);
+//    console.log(code + codeEnd);
     
     // Call callback
     callback(Script.runInNewContext(code + codeEnd, bundle));
 }
 exports.compile = compile;
+
+/**
+ * Just write raw chunk
+ * @param {Chunk} chunk Target chunk in hStream
+ * @param {String} data
+ */
+function raw(chunk, data){
+    console.log(">>>RAW %s", chunk.__getId());
+    chunk.write(data);
+}
 
 /**
  * Section evaluation
@@ -81,6 +92,8 @@ exports.compile = compile;
  * @param {Array} action Bundle of actions
  */
 function section(manner, chunk, target, context, action) {
+    console.log(">>>SEC-IN %s", chunk.__getId());
+    
     if (typeof target === 'function') {
         // Target is function
         var target = target(context);
@@ -98,8 +111,11 @@ function section(manner, chunk, target, context, action) {
                                     : data.toString());
                         });
                     };
-                    action(chunk.map(), context);
-                    chunk.end();
+                    
+//                    var act = chunk.map();
+                    action(chunk, context);
+//                    act.end();
+                    chunk.end()
                 } else {
                     // No lambda - just async function
                     manner(chunk, target, context, action);
@@ -123,6 +139,8 @@ function section(manner, chunk, target, context, action) {
  * @param {Array} action Bundle of actions
  */
 function sectionMannerNormal(chunk, target, context, action) {
+    console.log(">>>SEC-NORM %s", chunk.__getId());    
+    
     if (Array.isArray(target)) {
         // target is array
         if (!!target.length) {

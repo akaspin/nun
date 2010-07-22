@@ -77,7 +77,6 @@ Chunk.prototype.write = function(data) {
  * Polls chunk. At this point chunk data can be only string.
  */
 Chunk.prototype.__poll = function() {
-    
     if (this.bounded) {
         // Chunk bounded. So bounded chunks always has parent
         
@@ -117,6 +116,17 @@ Chunk.prototype.__isLead = function() {
         return this.parent.__isLead();
     }
 };
+
+Chunk.prototype.__getId = function() {
+    if (!this.parent) { 
+        // Root chunk
+        return "root";
+    }
+    
+    return this.parent.__getId() + "." + this.id;
+};
+
+
 
 /**
  * HStream

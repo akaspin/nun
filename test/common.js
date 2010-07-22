@@ -21,7 +21,6 @@ assertFile = exports.assertFile = function(actual, name) {
 };
 
 var ended = false;
-
 exports.test = function(name, context, options, callback) {
     var fixture = {context: {}, options: {}};
     if (!context || !options) {
