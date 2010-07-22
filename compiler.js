@@ -79,7 +79,6 @@ exports.compile = compile;
  * @param {String} data
  */
 function raw(chunk, data){
-    console.log(">>>RAW %s", chunk.__getId());
     chunk.write(data);
 }
 
@@ -92,8 +91,6 @@ function raw(chunk, data){
  * @param {Array} action Bundle of actions
  */
 function section(manner, chunk, target, context, action) {
-    console.log(">>>SEC-IN %s", chunk.__getId());
-    
     if (typeof target === 'function') {
         // Target is function
         var target = target(context);
@@ -112,10 +109,8 @@ function section(manner, chunk, target, context, action) {
                         });
                     };
                     
-//                    var act = chunk.map();
                     action(chunk, context);
-//                    act.end();
-                    chunk.end()
+                    chunk.end();
                 } else {
                     // No lambda - just async function
                     manner(chunk, target, context, action);
@@ -139,8 +134,6 @@ function section(manner, chunk, target, context, action) {
  * @param {Array} action Bundle of actions
  */
 function sectionMannerNormal(chunk, target, context, action) {
-    console.log(">>>SEC-NORM %s", chunk.__getId());    
-    
     if (Array.isArray(target)) {
         // target is array
         if (!!target.length) {
