@@ -35,9 +35,9 @@ nun.render(fixture.example, fixture.opts.context, fixture.opts.options,
         })
         .on('end', function(){
             console.log(buffer);
-//            fs.writeFile(expect, buffer, function(err) {
-//                if (err) throw err;
-//                console.log(buffer);
-//            });
+            fs.writeFile(expect, buffer, function(err) {
+                if (err) throw err;
+                console.log(buffer);
+            });
         });
 });

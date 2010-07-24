@@ -1,27 +1,27 @@
 var sys = require("sys");
-var assert =  require('assert');
 var fs = require("fs");
 var path = require("path");
-var Buffer = require('buffer').Buffer;
+var assert = require("assert");
 
 var nun = exports.nun = require("../");
 
-file = exports.file = function(name) {
-    return path.normalize(__dirname + "/fixtures/" + name + ".html");
-};
-
-assertFile = exports.assertFile = function(actual, name) {
-    file = path.normalize(__dirname + "/expects/" + name + ".html");
-    fs.readFile(file, 'utf8', function(err, expected) {
-        if (err) {
-            throw err;
-        } 
-        assert.equal(actual, expected);
-    });
-};
-
 var ended = false;
 exports.test = function(name, context, options, callback) {
+        
+    function file(name) {
+        return path.normalize(__dirname + "/fixtures/" + name + ".html");
+    };
+    
+    function assertFile(actual, name) {
+        file = path.normalize(__dirname + "/expects/" + name + ".html");
+        fs.readFile(file, 'utf8', function(err, expected) {
+            if (err) {
+                throw err;
+            } 
+            assert.equal(actual, expected);
+        });
+    };
+    
     var fixture = {context: {}, options: {}};
     if (!context || !options) {
         overFixture = require("./fixtures/" + name);
@@ -39,12 +39,11 @@ exports.test = function(name, context, options, callback) {
             .addListener('end', function(){ 
                 ended = true;
                 //sys.debug(buffer);
-                assertFile(buffer, name); 
+                assertFile(buffer, name);
             });
     });
 };
 
-process.addListener("exit", function () {
-      assert.ok(ended);
+process.on("exit", function () {
+    assert.ok(ended);
 });
-

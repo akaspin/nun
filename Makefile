@@ -10,11 +10,10 @@ test:
 	@for i in test/test-*.js; do \
 		echo -n "$$i: "; \
 		$(NODE) $$i > /dev/null && $(PASS) || $(FAIL); \
-	done
+	done;
 
 benchmark:
 	@for i in test/benchmark-*.js; do \
-		echo -n "$$i: "; \
 		$(NODE) $$i; \
 	done
 
