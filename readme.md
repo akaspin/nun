@@ -174,6 +174,7 @@ Value in context can be one of following:
 * Non empty object
 * Non empty String 
 * Non Zero Number
+* Non `null`
 * Boolean true
 
 If the value does not fit into these limits, nothing will be rendered.
@@ -590,7 +591,7 @@ library using *nun*, a single global way will only interfere.
 
 ### ... is fast?
 
-So since version 0.1.101 *nun* totally refactored. On my test VM slightly 
+So since version 0.1.11 *nun* totally refactored. On my test VM slightly 
 tuned "million-comlex" benchmark from mustache taken *about 45 seconds*.
 
 You can run benchmark as follows:
@@ -603,6 +604,3 @@ You can run benchmark as follows:
 Nun architecture a bit similar to Mu. "Nun" is the letter of the Phoenician 
 alphabet that means snake or fish, corresponding to the Greek "Nu", which 
 follows the "Mu".
-
- 
-

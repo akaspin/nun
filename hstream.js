@@ -137,7 +137,13 @@ function HStream() {
     this.root = new Chunk(this, undefined, undefined);
     this.closed = false;
 }
-sys.inherits(HStream, events.EventEmitter);
+HStream.prototype = new events.EventEmitter;
+//HStream.prototype = Object.create(events.EventEmitter.prototype, {
+//    constructor: {
+//    value: HStream,
+//    enumerable: false
+//  }
+//});
 exports.HStream = HStream;
 
 /**
