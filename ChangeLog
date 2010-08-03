@@ -2,6 +2,10 @@ In work, Version 0.2
 
 * Syntax checking (in work)
 
+In work, Version 0.1.12
+
+* Remove dependency to sys.inherits
+
 2010.06.21, Version 0.1.11
 
 * Serious performance boost - faster three times
