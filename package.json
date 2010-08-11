@@ -10,10 +10,10 @@
             "email" : "aka.spin@gmail.com"
         }
     ],
-    "repositories" : [
+    "repository" : {
         "type" : "git",
-        "url" : "https://akaspin@github.com/akaspin/nun.git"
-    ],
+        "url" : "http://github.com/akaspin/nun.git"
+    },
     "bugs" : {
         "web" : "http://github.com/akaspin/nun/issues"
     },
@@ -24,7 +24,7 @@
         "test" : "make test",
         "benchmark" : "make benchmark"
     },
-    "licenses": [
+    "licenses" : [
         {
             "type": "MIT",
             "url": "http://github.com/akaspin/nun/blob/master/LICENSE"
