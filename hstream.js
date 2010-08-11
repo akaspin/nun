@@ -137,7 +137,7 @@ function HStream() {
     this.root = new Chunk(this, undefined, undefined);
     this.closed = false;
 }
-//HStream.prototype = new events.EventEmitter;
+HStream.super_ = events.EventEmitter;
 HStream.prototype = Object.create(events.EventEmitter.prototype, {
     constructor: {
     value: HStream,

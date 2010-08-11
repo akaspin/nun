@@ -1,0 +1,33 @@
+{
+    "name" : "nun",
+    "description" : "Totally asynchronous non-blocking template engine for node.js",
+    "version" : "0.1.12",
+    "main" : "./index",
+    "author" : "Alexander Dorofeev",
+    "maintainers" : [
+        {
+            "name" : "Alexander Dorofeev",
+            "email" : "aka.spin@gmail.com"
+        }
+    ],
+    "repositories" : [
+        "type" : "git",
+        "url" : "https://akaspin@github.com/akaspin/nun.git"
+    ],
+    "bugs" : {
+        "web" : "http://github.com/akaspin/nun/issues"
+    },
+    "directories" : {
+        "test" : "./test"
+    },
+    "scripts" : {
+        "test" : "make test",
+        "benchmark" : "make benchmark"
+    },
+    "licenses": [
+        {
+            "type": "MIT",
+            "url": "http://github.com/akaspin/nun/blob/master/LICENSE"
+        }
+    ]
+}
