@@ -20,6 +20,13 @@ javascript functions. Compiled functions acts as node.js EventEmmiters.
   in parallel as early as possible.
 * Compile time preprocessing: overrides, partials and filters.
 
+## Installation
+
+You can install *nun* as usual - by copy "nun" directory in your 
+`~/.node_libraries` or via *npm*
+
+    npm install nun
+
 ## Usage
 
 Basic usage is very simple:
