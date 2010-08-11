@@ -5,6 +5,7 @@ In work, Version 0.2
 2010.08.11, Version 0.1.12
 
 * Remove dependency to sys.inherits
+
 * Add npm package
 
 2010.06.21, Version 0.1.11
