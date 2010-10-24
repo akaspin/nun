@@ -1,4 +1,3 @@
-var sys = require("sys");
 var fs = require("fs");
 var path = require("path");
 var Buffer = require('buffer').Buffer;
@@ -46,7 +45,6 @@ function parse(origin, customOptions, callback) {
         }
         
         parseText(source, origin, customOptions, function(err, stream) {
-        //sys.puts(sys.inspect(stream));
             callback(err, stream);
         });    
     });
@@ -416,8 +414,6 @@ function tokenize(source, options, callback) {
         return buffer;
     }, []);
 
-    //sys.debug(sys.inspect(output));
-    
     callback(undefined, output);
 };
 

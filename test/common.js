@@ -1,4 +1,3 @@
-var sys = require("sys");
 var fs = require("fs");
 var path = require("path");
 var assert = require("assert");
@@ -38,7 +37,6 @@ exports.test = function(name, context, options, callback) {
             .addListener('data', function(data){ buffer += data; })
             .addListener('end', function(){ 
                 ended = true;
-                //sys.debug(buffer);
                 assertFile(buffer, name);
             });
     });

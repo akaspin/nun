@@ -31,7 +31,6 @@ You can install *nun* as usual - by copy "nun" directory in your
 
 Basic usage is very simple:
 
-    var sys = require("sys");
     var nun = require("nun");
     
     var origin = __dirname + "/template.html";
@@ -41,7 +40,7 @@ Basic usage is very simple:
         
         var buffer = '';
         output.on('data', function(data){ buffer += data; })
-              .on('end', function(){ sys.puts(buffer) });
+              .on('end', function(){ console.log(buffer) });
     });
     
 template.html
@@ -67,7 +66,6 @@ fires on template completelly rendered.
 
 Instead of rendering the template can be compiled for future use.
 
-    var sys = require("sys");
     var nun = require("nun");
     
     var origin = __dirname + "/template.html";
@@ -78,7 +76,7 @@ Instead of rendering the template can be compiled for future use.
         var buffer = '';
         template(ctx)
             .on('data', function(data){ buffer += data; })
-            .on('end', function(){ sys.puts(buffer) });
+            .on('end', function(){ console.log(buffer) });
     });
     
 To run the tests:

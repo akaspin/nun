@@ -1,4 +1,3 @@
-var sys = require("sys");
 var Script = process.binding('evals').Script;
 var HStream = require("./hstream").HStream;
 

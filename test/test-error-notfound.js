@@ -1,4 +1,3 @@
-var sys = require("sys");
 var assert = require("assert");
 var nun = require('../');
 

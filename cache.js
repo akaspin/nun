@@ -3,8 +3,6 @@
  * "dog-pile effect".
  */
 
-//var sys = require("sys"); 
-
 var cache = {};
 var waiters = {};
 var needFlush = [];
@@ -14,17 +12,16 @@ var needFlush = [];
  * 
  * @example
  * 
- *         var sys = require("sys");
  *         var cache = require("./cache");
  * 
  *         for (var i = 0; i < 100; i++) {
  *             cache("key", 
  *                 function(value){ // Getter
- *                     sys.debug("Getted: " + value);
+ *                     console.log("Getted: " + value);
  *                 },
  *                 function(callback){
  *                     setTimeout(function(){
- *                         sys.debug("Do render");
+ *                         console.log("Do render");
  *                         callback("test");
  *                     }, 2000);
  *                 }
