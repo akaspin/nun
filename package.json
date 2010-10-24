@@ -1,7 +1,7 @@
 {
     "name" : "nun",
     "description" : "Totally asynchronous non-blocking template engine for node.js",
-    "version" : "0.1.12",
+    "version" : "0.1.13",
     "main" : "./index",
     "author" : "Alexander Dorofeev",
     "maintainers" : [

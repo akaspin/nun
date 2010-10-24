@@ -2,6 +2,10 @@ In work, Version 0.2
 
 * Syntax checking (in work)
 
+2010-10-25, Version 0.1.13
+
+* Totally remove dependencies to sys
+
 2010.08.11, Version 0.1.12
 
 * Remove dependency to sys.inherits
