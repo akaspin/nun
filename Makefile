@@ -7,11 +7,9 @@ FAIL=echo FAIL
 PASS=echo PASS
 
 test:
-	node test/run.js
+	@$(NODE) test/run.js test
 
 benchmark:
-	@for i in test/benchmark-*.js; do \
-		$(NODE) $$i; \
-	done
+	@$(NODE) test/run.js test --prefix=benchmark- --times
 
 .PHONY: test benchmark
