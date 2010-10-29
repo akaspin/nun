@@ -1,8 +1,8 @@
-var assert = require("assert");
+var pit = require("./run");
 var cache = require("../cache");
 
-var renders = 0;
-var gets = 0;
+pit.expect("renders", 4);
+pit.expect("gets", 4000);
 
 for (var i = 0; i < 4; i++) {
     var key = i.toString();
@@ -10,19 +10,15 @@ for (var i = 0; i < 4; i++) {
         cache.operate(key, 
             function(value) {
                 if (value == key) {
-                    gets++;
+                    pit.mark("gets");
                 }
             }, 
             function(callback) {
                 setTimeout(function(){
-                    renders++;
+                    pit.mark("renders");
                     callback(key);
                 }, 200);
             });
     }
 }
 
-process.addListener("exit", function () {
-    assert.equal(renders, 4);
-    assert.equal(gets, 4000);
-});

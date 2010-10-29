@@ -1,10 +1,12 @@
 var fs = require("fs");
 var path = require("path");
 var assert = require("assert");
+var pit = require("./run.js");
 
 var nun = exports.nun = require("../");
 
-var ended = false;
+pit.expect("ended", 1);
+
 exports.test = function(name, context, options, callback) {
         
     function file(name) {
@@ -36,12 +38,8 @@ exports.test = function(name, context, options, callback) {
         output
             .addListener('data', function(data){ buffer += data; })
             .addListener('end', function(){ 
-                ended = true;
+                pit.mark("ended");
                 assertFile(buffer, name);
             });
     });
 };
-
-process.on("exit", function () {
-    assert.ok(ended);
-});
