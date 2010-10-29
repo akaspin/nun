@@ -576,8 +576,7 @@ you can set `options.cache` parameter to `false`.
     nun.render(__dirname + "/file.html", {}, { cache: false }, ...);
     
 If you set different options for one template file, *nun* caching will consider 
-them as two different templates. This only working if *node.js* compiled with
-openssl support. Without openssl support, templates cached only for file name.
+them as two different templates. 
 
 ### Compressing whitespace
 
@@ -586,6 +585,8 @@ compile-phase filters, you can compress all whitespace in template by setting
 `options.compress` parameter to `true`.
 
     nun.render(__dirname + "/file.html", {}, { compress: true }, ...);
+    
+**`node.js` must be compiled with openssl support.**
     
 ## How Nun...
 

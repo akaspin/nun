@@ -1,13 +1,5 @@
 var path = require("path");
-
-// openssl support
-var have_openssl;
-try {
-  var crypto = require('crypto');
-  have_openssl=true;
-} catch (e) {
-  have_openssl=false;
-}
+var crypto = require('crypto');
 
 var parser = require("./parser");
 var compiler = require("./compiler");
@@ -29,11 +21,9 @@ function compile(origin, options, callback) {
         
         // If caching enabled -  
         if (key) {
-            if (have_openssl) { 
                 // if have openssl, add options hash to key
                 key += crypto.createHash("sha1").
                         update(options).digest("hex");
-            }
             cache.operate(key,
                 function(fn) { // getter
                     callback(undefined, fn);
