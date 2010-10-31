@@ -3,7 +3,6 @@
  */
 
 var assert = require('assert');
-
 var exec = require('child_process').exec;
 var fs = require('fs');
 var path = require('path');
@@ -105,32 +104,142 @@ function hook(fn) {
 }
 exports.hook = hook;
 
+// Option parser
+var opts = tav = { };
+Object.defineProperty(tav, "args", {
+ value : [],
+ enumerable : false
+});
+Object.defineProperty(tav, "set", {
+ value : function(spec, banner, strict) {
+     var self = this;
+     var incoming = process.argv.slice(2); // incoming params
+     var arrayDiff = function(a, b) {
+         return b.filter(function(i) {
+             return a.indexOf(i) == -1;
+         });
+     };
+     var check = function(parsed) {
+         var end = false, message = "", code = 0, outer = console.log;
+         var setted = Object.keys(self);
+         var specced = Object.keys(parsed);
+         var required = arrayDiff(setted, specced);
+         var unexpected = arrayDiff(specced, setted);
+         
+         // If any required options is not provided - crash it!
+         if (required.length) {
+             end = true;
+             code = 1;
+             outer = console.error;
+             message += "Required but not provided:\n    --" 
+                     + required.join("\n    --") + "\n";
+         }
+         // + unexpected
+         if (unexpected.length) {
+             message += "Unexpected options:\n    --"
+                     + unexpected.join("\n    --") + "\n";
+         }
+         if (strict && message.length) {
+             end = true;
+             code = 1;
+             outer = console.error;
+         }
+         
+         // If --help, exit without error
+         if (incoming.indexOf("--help") != -1) {
+             end = true;
+             code = 0;
+             outer = console.log;
+         }
+         
+         if (end) {
+             // exiting
+             outer(banner + "\n");
+             outer(message);
+             outer(Object.keys(parsed).reduce(function(msg, k) {
+                 return msg + parsed[k].note + "\n    --" + k
+                        + (parsed[k].req ? " *required\n" : "\n");
+             }, ""));
+             process.exit(code);
+         }
+     };
+     
+     // Fill spec and default values
+     var parsed = {};
+     Object.keys(spec).forEach(function(name) {
+         var req = spec[name].value === undefined ? true : false;
+         var note = spec[name].note || "Note not provided";
+         parsed[name] = {
+             req : req,
+             note : note
+         };
+         // If value not required - set it
+         if (!req) {
+             self[name] = spec[name].value;
+         }
+     });
+     
+     // Evaluate process.argv
+     var numRe = /^[0-9.]+$/;
+     incoming.filter(function(chunk) {
+         return chunk != "--help" && chunk != "--";
+     })
+     .forEach(function(chunk) {
+         if (chunk.substring(0,2) == "--") {
+             var tokens = chunk.substring(2).split("=");
+             var name = tokens[0];
+             
+             // Expected option - evaluate value
+             if (tokens.length == 1) {
+                 // Boolean
+                 var value = true;
+             } else {
+                 var value = numRe.test(tokens[1]) ?
+                         parseFloat(tokens[1]) : tokens[1]; 
+             }
+             self[name] = value;
+         } else {
+             // Just argument
+             self.args.push(chunk);
+         }
+     });
+     
+     check(parsed);
+     return this;
+ },
+ enumerable : false,
+ configurable : false
+});
+
 /**
- * Collect
- * @param root Root folder
- * @param targets targets
+ * Collects tests from opts.args. Returns Array of
+ * tests in following format:
+ * 
+ *     { file: '/absolute/test/filename', 
+ *       group: 'test-group or empty' }
  */
-function collect(root, targets, prefix, ext) {
-    var pattern = new RegExp("^" + prefix + ".+" + 
-            ext.replace(/\./, "\\\.") + "$");
-    var targets = targets.reduce(function(acc, t) {
-        return acc.concat(path.normalize(root + "/" + t));
-    }, []);
-    return targets.reduce(function(acc, dir) {
+function collect() {
+    var pattern = new RegExp("^" + opts.prefix + ".+" + 
+            opts.ext.replace(/\./, "\\\.") + "$");
+    var groups = opts.args.concat('');
+    
+    return opts.args.concat('').reduce(function(tests, group) {
+        var dir = path.normalize(opts.root + "/" + group);
         try {
-            return acc.concat(
-                    fs.readdirSync(dir).reduce(function(acc, file) {
-                        var fullName = path.normalize(dir + "/" + file);
-                        var ok = pattern.exec(file) && 
-                        fs.statSync(fullName).isFile();
-                        return ok ? acc.concat(fullName) : acc;
-                    }, [])
-            );
+            return fs.readdirSync(dir).reduce(function(tests, file) {
+                var fullName = path.normalize(dir + "/" + file);
+                var ok = pattern.exec(file) && fs.statSync(fullName).isFile();
+                return ok ? tests.concat({
+                    file : fullName,
+                    group : group
+                }) : tests;
+            }, tests);
         } catch (e) {
-            console.warn("WARN: %s\n%s", e.message, e.stack);
-            return acc;
+            // some errors - just return tests
+            console.warn("WARN: %s\n%s", e.message);
+            return tests;
         }
-    } ,[]);
+    }, []);
 }
 
 /**
@@ -143,10 +252,8 @@ function collect(root, targets, prefix, ext) {
  * @param targets Array of file names
  * @param conc Number of concurrent processes
  */
-function Runner(targets, conc, host) {
+function Runner(targets) {
     events.EventEmitter.call(this);
-    this.conc = conc || 1;
-    this.host = host || "node";
     this.pending = targets;
     this.running = 0;
     this.start = Date.now();
@@ -155,10 +262,10 @@ util.inherits(Runner, events.EventEmitter);
 
 Runner.prototype.run = function() {
     if (this.pending.length) {
-        var forLaunch = this.conc > this.pending.length ?
-                this.pending.length : this.conc;
-        
-        for (var i = 0; i < forLaunch; i++) {
+        var forLaunch = opts.conc > this.pending.length ? this.pending.length
+                : opts.conc;
+
+        for ( var i = 0; i < forLaunch; i++) {
             this.next();
         }
     } else {
@@ -169,201 +276,136 @@ Runner.prototype.run = function() {
 /**
  * Run next test
  */
- Runner.prototype.next = function() {
-     this.running++;
-     var file = this.pending.shift();
-     var test = {
-             file: file,
-             time: Date.now()
-     };
-     var self = this;
-     exec(this.host + " " + file, function(error, stdout, stderr) {
-         test.time = (Date.now() - test.time) / 1000 ;
-         test.fail = error;
-         test.out = stdout ? stdout : undefined;
-         test.err = stderr ? stderr : undefined;
-         self.done(test);
-     });
- };
- Runner.prototype.done = function(test) {
-     this.running--;
-     this.emit("data", test);
-     if (this.pending.length) {
-         this.next();
-     } else if (this.running < 1) {
-         this.end();
-     }
- };
- Runner.prototype.end = function() {
-     this.emit("end", (Date.now() - this.start) / 1000);
- };
- 
- /**
-  * Reporter. Catches Runner events and prints the report 
-  * in accordance given with options.
-  * 
-  * @param runner Runner
-  * @param opts Options
-  * @returns {Reporter}
-  */
- function Reporter(runner, opts) {
-     this.runner = runner;
-     this.opts = opts;
-     
-     this.total = 0;
-     this.passed = 0;
-     
-     this.anyWritten = false;
-     
-     var self = this;
-     this.runner.on("data", function(test) {
-         self.test(test);
-     });
-     this.runner.on("end", function(time) {
-         self.done(time);
-     });
-     this.runner.run();
- }
- Reporter.prototype.test = function(test) {
-     // Just format output
-     function formatOut(pre, out) {
-         return "* " + pre + "\n    " +  out
-         .replace(/\n$/, "")
-         .replace(/^\n/, "")
-         .replace(/\n\n/, "\n")
-         .replace(/\n/g, "\n    ");
-         
-     }
-     
-     this.total++;
-     if (test.fail != null) {
-         // Oops. Test failed
-         var mark = "FAIL";
-         var need = (!this.opts.get("noout") && test.out) 
-         || !this.opts.get("noerr") 
-         || !this.opts.get("nofailed");
-         var outer = console.error;
-     } else {
-         this.passed++;
-         var mark = "PASS";
-         var need = (!this.opts.get("noout") && test.out)
-         || this.opts.get("passed");
-         var outer = console.log;
-     }
-     
-     if (need) {
-         var name = path.basename(test.file, this.opts.get("ext"))
-         .substring(this.opts.get("prefix").length);
-         var time = this.opts.get("times") ? " (" + test.time +"s)" : "";
-         
-         if (!this.anyWritten) {
-             console.log();
-             this.anyWritten = true;
-         }
-         
-         outer("%s %s%s", mark, name, time);
-         if (test.out && !this.opts.get("noout")) {
-             outer(formatOut("output", test.out));
-         }
-         if (test.err && !this.opts.get("noerr")) {
-             outer(formatOut("errors", test.err));
-         }
-     }
- };
- Reporter.prototype.done = function(time) {
-     var time = this.opts.get("times") ? " (" + time +"s)" : "";
-     var anyWritten = this.anyWritten ? "\n" : "";
-     var outer = this.passed == this.total ?
-             console.log : console.error;
-     
-     outer("%s%d/%d%s%s", anyWritten, 
-             this.passed, this.total, time, anyWritten);
- };
- 
- /**
-  * Command-line options parser. Quick and dirty.
-  * @param synopsis
-  * @returns {Opts}
-  */
- function Opts(synopsis) {
-     this._synopsis = synopsis;
-     this._opts = {};
-     this._params = [""];
- }
- Opts.prototype.set = function(name, value, message) {
-     this._opts[name] = {
-             value: value, 
-             message: message};
-     return this;
- };
- Opts.prototype.parse = function(args) {
-     var self = this;
-     args.forEach(function(arg) {
-         if (arg.substring(0,2) === "--") {
-             // it's option
-             var tokens = arg.split("=");
-             var name = tokens[0].substring(2);
-             var value = tokens.length == 1 ? true : tokens[1];
-             
-             if (self._opts[name]) {
-                 self._opts[name].value = value;
-             }
-         } else {
-             // it's param
-             self._params.push(arg);
-         }
-     });
-     return this;
- };
- Opts.prototype.get = function(name) {
-     return this._opts[name].value;
- };
- Opts.prototype.__defineGetter__("params", function() {
-     return this._params;
- });
- Opts.prototype.__defineGetter__("usage", function() {
-     function trail(str, max) {
-         for (var i = 0, t = "  "; i < max - str.length; i++) {
-             t += " ";
-         }
-         return str + t;
-     }
-     var usage = this._synopsis + "\n\n";
-     var maxlength = Object.keys(this._opts).reduce(function(max, name) {
-         return name.length > max ? name.length : max;
-     }, 0);
-     for (var k in this._opts) {
-         usage += "  --" + trail(k, maxlength) + this._opts[k].message + "\n";
-     }
-     return usage;
-     
- });
+Runner.prototype.next = function() {
+    this.running++;
+    var t = this.pending.shift();
+    var test = {
+        file : t.file,
+        group : t.group,
+        time : Date.now()
+    };
+    var self = this;
+    exec(opts.host + " " + test.file, function(error, stdout, stderr) {
+        test.time = (Date.now() - test.time) / 1000;
+        test.fail = error;
+        test.out = stdout ? stdout : undefined;
+        test.err = stderr ? stderr : undefined;
+        self.done(test);
+    });
+};
+Runner.prototype.done = function(test) {
+    this.running--;
+    this.emit("data", test);
+    if (this.pending.length) {
+        this.next();
+    } else if (this.running < 1) {
+        this.end();
+    }
+};
+Runner.prototype.end = function() {
+    this.emit("end", (Date.now() - this.start) / 1000);
+};
 
+ /**
+ * Reporter. Catches Runner events and prints the report in 
+ * accordance given with options.
+ * @param runner Runner
+ * @returns {Reporter}
+ */
+function Reporter(runner) {
+    this.runner = runner;
+    this.total = 0;
+    this.passed = 0;
+    this.anyWritten = false;
+
+    var self = this;
+    this.runner.on("data", function(test) {
+        self.test(test);
+    });
+    this.runner.on("end", function(time) {
+        self.done(time);
+    });
+    this.runner.run();
+}
+Reporter.prototype.test = function(test) {
+    // Just format output
+    function formatOut(pre, out) {
+        return "* " + pre + "\n    " + out
+                .replace(/\n$/, "")
+                .replace(/^\n/, "")
+                .replace(/\n\n/, "\n")
+                .replace(/\n/g, "\n    ");
+    }
+
+    this.total++;
+    if (test.fail != null) {
+        var mark = "FAIL";
+        var need = (!opts.noout && test.out) || !opts.noerr || !opts.nofailed;
+        var outer = console.error;
+    } else {
+        this.passed++;
+        var mark = "PASS";
+        var need = (!opts.noout && test.out) || opts.passed;
+        var outer = console.log;
+    }
+
+    if (need) {
+        var name = (test.group == '' ? '' : "[" + test.group + "] ") 
+                + path.basename(test.file, opts.ext)
+                        .substring( opts.prefix.length);
+        var time = opts.times ? " (" + test.time + "s)" : "";
+
+        if (!this.anyWritten) {
+            console.log();
+            this.anyWritten = true;
+        }
+
+        outer("%s %s%s", mark, name, time);
+        if (test.out && !opts.noout) {
+            outer(formatOut("output", test.out));
+        }
+        if (test.err && !opts.noerr) {
+            outer(formatOut("errors", test.err));
+        }
+    }
+};
+Reporter.prototype.done = function(time) {
+    var time = opts.times ? " (" + time + "s)" : "";
+    var anyWritten = this.anyWritten ? "\n" : "";
+    var outer = this.passed == this.total ? console.log : console.error;
+
+    outer("%s%d/%d%s%s", anyWritten, this.passed, this.total, time, anyWritten);
+};
+ 
  if (!module.parent) {
     // if we are in running module
-    var opts = new Opts(
-            "Pit, Simple drop-in test runner.\n" +
-            "http://github.com/akaspin/pit\n\n" +
-            "usage: node run.js [options] [targets]")
-            .set("prefix", "test-", "Prefix for collect tests.")
-            .set("ext", ".js", "Extension for collect tests.")
-            .set("times", false, "Show tests durations.")
-            .set("passed", false, "Show passed tests.")
-            .set("nofailed", false, "Disable failed tests.")
-            .set("noout", false, "Disable tests STDOUT.")
-            .set("noerr", false, "Disable tests STDERR.")
-            .set("conc", "1", "Concurrent tests.")
-            .set("host", "node", "Host interpreter.")
-            .set("help", false, "Help. This message.")
-        .parse(process.argv.slice(2));
-    
-    if (opts.get("help")) {
-        console.log(opts.usage);
-    } else {
-        // run tests
-        var tests = collect(process.cwd(), opts.params, 
-                opts.get("prefix"), opts.get("ext"));
-        var runner = new Runner(tests, parseInt(opts.get("conc")));
-        new Reporter(runner, opts);
-    }
+     tav.set({
+         prefix: {note: 'Prefix for collect tests.',
+             value: 'test-'},
+         ext: {note: 'Extension for collect tests.',
+             value: '.js'},
+         times: {note: 'Show tests durations.',
+             value: false},
+         passed: {note: 'Show passed tests.',
+             value: false},
+         nofailed: {note: 'Disable failed tests.',
+             value: false},
+         noout: {note: 'Disable tests STDOUT.',
+             value: false},
+         noerr: {note: 'Disable tests STDERR.',
+             value: false},
+         conc: {note: 'Concurrent threads.',
+             value: 1},
+         host: {note: 'Host interpreter.',
+             value: "node"},
+         root: {note: 'Root folder to collect tests.',
+             value: __dirname}
+     }, "Pit, Simple drop-in test runner.\n" +
+     "http://github.com/akaspin/pit",
+     true);
+     
+    // run tests
+    var tests = collect();
+    var runner = new Runner(tests);
+    new Reporter(runner);
 }
