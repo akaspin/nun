@@ -23,7 +23,7 @@ function compile(origin, options, callback) {
         if (key) {
                 // if have openssl, add options hash to key
                 key += crypto.createHash("sha1").
-                        update(options).digest("hex");
+                        update(JSON.stringify(options)).digest("hex");
             cache.operate(key,
                 function(fn) { // getter
                     callback(undefined, fn);
