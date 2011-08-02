@@ -1,5 +1,7 @@
 # Nun
 
+*I do not support this more. If you need it, just fork it.*
+
 Nun is totally asynchronous non-blocking template engine for 
 [node.js](http://nodejs.org).
 
