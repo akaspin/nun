@@ -454,7 +454,7 @@ Lets execute template with imaginary "toUpperCase" filter:
         Name is {{name}}
     {{/toUpperCase}}
     
-Provide JSON:
+Provide context:
 
     {
         name: "John Dow"
