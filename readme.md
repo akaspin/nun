@@ -27,31 +27,39 @@ javascript functions. Compiled functions acts as node.js EventEmmiters.
 You can install *nun* as usual - by copy "nun" directory in your 
 `~/.node_libraries` or via *npm*
 
-    npm install nun
+```
+npm install nun
+```
 
 ## Usage
 
 Basic usage is very simple:
 
-    var nun = require("nun");
+```js
+var nun = require("nun");
+
+var origin = __dirname + "/template.html";
+
+nun.render(origin, { name: "John Dow" }, {}, function(err, output){
+    if (err) throw err;
     
-    var origin = __dirname + "/template.html";
-    
-    nun.render(origin, { name: "John Dow" }, {}, function(err, output){
-        if (err) throw err;
-        
-        var buffer = '';
-        output.on('data', function(data){ buffer += data; })
-              .on('end', function(){ console.log(buffer) });
-    });
-    
+    var buffer = '';
+    output.on('data', function(data){ buffer += data; })
+          .on('end', function(){ console.log(buffer) });
+});
+```
+
 template.html
 
-    Name is {{name}}.
-    
+```
+Name is {{name}}.
+```
+
 Output:
-    
-    Name is John Dow.
+
+```
+Name is John Dow.
+```
     
 `render` function takes four arguments: 
 
@@ -68,27 +76,33 @@ fires on template completelly rendered.
 
 Instead of rendering the template can be compiled for future use.
 
-    var nun = require("nun");
-    
-    var origin = __dirname + "/template.html";
-    
-    nun.compile(origin, {}, function(err, template){
-        if (err) throw err;
-        
-        var buffer = '';
-        template(ctx)
-            .on('data', function(data){ buffer += data; })
-            .on('end', function(){ console.log(buffer) });
-    });
+```js
+var nun = require("nun");
+
+var origin = __dirname + "/template.html";
+
+nun.compile(origin, {}, function(err, template){
+    if (err) throw err;
+
+    var buffer = '';
+    template(ctx)
+        .on('data', function(data){ buffer += data; })
+        .on('end', function(){ console.log(buffer) });
+});
+```
     
 To run the tests:
 
-    cd where/is/nun
-    make
+```
+cd where/is/nun
+make
+```
     
 ... And for run bencmark:
 
-    make benchmark 
+```
+make benchmark
+```
 
 ## Basic syntax
 
@@ -100,9 +114,11 @@ context key. Tags in Nun may contain spaces between parts of tags.
 
 For example:
 
-    {{name}} 
-    {{deep.in.name}} 
-    {{#section_start}} 
+```
+{{name}}
+{{deep.in.name}}
+{{#section_start}}
+```
 
 Nun supports following operators:
 
@@ -125,44 +141,54 @@ use ampersand `&` as operator. Unescaped triple tags from mustache
 
 Template:
 
-    {{name}} born in {{year}}. {{age}}
-    Escaped: {{tag}}
-    Unescaped: {{&tag}}
+```
+{{name}} born in {{year}}. {{age}}
+Escaped: {{tag}}
+Unescaped: {{&tag}}
+```
     
 Context:
 
-    {
-        name: "John Dow",
-        year: 1992,
-        tag: "<tag>"
-    }
-    
+```js
+{
+    name: "John Dow",
+    year: 1992,
+    tag: "<tag>"
+}
+```
+
 Output:
 
-    John Dow born in 1992.
-    Escaped: &lt;tag&gt
-    Unescaped: <tag>
+```
+John Dow born in 1992.
+Escaped: &lt;tag&gt
+Unescaped: <tag>
+```
     
 Key may be a synchronous or asynchronous function.
 
 In synchronous way `year` key from previous template may looks like this:
 
-    year: function(context){
-        return 1992;
-    }
+```js
+year: function(context){
+    return 1992;
+}
+```
     
 Function just receives context in args and returns output. Depending on the 
 operation returned result may be escaped or not. 
 
 In async way function may look little wildly:
 
-    year: function() {
-        return function(context, callback) { 
-            setTimeout(function() { // Expensive operation
-                callback(undefined, 1992);
-            }, 1000);
-        };
-    },
+```js
+year: function() {
+    return function(context, callback) { 
+        setTimeout(function() { // Expensive operation
+            callback(undefined, 1992);
+        }, 1000);
+    };
+},
+```
 
 So lets start digging. Function returns function what receives two argumens:
 context and callback. Callback receives two arguments: error and data. 
@@ -194,26 +220,32 @@ iteration.
 
 Template:
     
-    {{#info}}
-        {{name}} was born in {{year}}. Now {{.year}}
-    {{/info}}
+```
+{{#info}}
+    {{name}} was born in {{year}}. Now {{.year}}
+{{/info}}
+```
         
 Context:
     
-    { 
-        info: [
-            {name: 'Alex', year: 1992},
-            {name: 'Spot', year: 1994},
-            {name: 'Ab', year: 1942}
-        ],
-        year: 2010
-    }
+```js
+{ 
+    info: [
+        {name: 'Alex', year: 1992},
+        {name: 'Spot', year: 1994},
+        {name: 'Ab', year: 1942}
+    ],
+    year: 2010
+}
+```
         
 Will produce output:
         
-    Alex was born in 1992. Now 2010
-    Spot was born in 1994. Now 2010
-    Ab was born in 1942. Now 2010
+```
+Alex was born in 1992. Now 2010
+Spot was born in 1994. Now 2010
+Ab was born in 1942. Now 2010
+```
         
 ### Object sections
 
@@ -223,17 +255,21 @@ context.
 For example: if you render template from Arrays 
 sections with following context:
 
-    { 
-        info: {
-            name: 'Alex', 
-            year: 1992
-        },
-        year: 2010
-    }
+```js
+{ 
+    info: {
+        name: 'Alex', 
+        year: 1992
+    },
+    year: 2010
+}
+```
 
 Will produce this:
 
-    Alex was born in 1992. Now 2010
+```
+Alex was born in 1992. Now 2010
+```
     
 ### Single value sections
 
@@ -252,22 +288,28 @@ An inverted section begins with a caret (hat) `^` and ends with a slash `/`.
 
 Template:
 
-    {{#info}}
-        {{name}} was born in {{year}}
-    {{#info}}
-    {{^info}}
-        Nothing here.
-    {{/info}}
+```
+{{#info}}
+    {{name}} was born in {{year}}
+{{#info}}
+{{^info}}
+    Nothing here.
+{{/info}}
+```
     
 Context:
 
-    {
-        info: []
-    }
+```js
+{
+    info: []
+}
+```
     
 Output:
     
-    Nothing here.
+```
+Nothing here.
+```
     
 ### Functions as keys 
 
@@ -278,29 +320,32 @@ in lookups.
 
 For example: if you replace context for template from Arrays sections with this:
 
-    { 
-        info: function(){
-            return function(context, callback) {
-                setTimeout(function(){
-                    callback(undefined, [
-                        {name: 'Alex', year: 1992},
-                        {name: 'Spot', year: 1994},
-                        {name: 'Ab', year: 1942}
-                    ]);
-                }, 1000);
-            }
-        }
-        year: function(context) {
-            return 2010;
+```js
+{ 
+    info: function(){
+        return function(context, callback) {
+            setTimeout(function(){
+                callback(undefined, [
+                    {name: 'Alex', year: 1992},
+                    {name: 'Spot', year: 1994},
+                    {name: 'Ab', year: 1942}
+                ]);
+            }, 1000);
         }
     }
-     
+    year: function(context) {
+        return 2010;
+    }
+}
+```
+
 Will produce same output:
-        
-    Alex was born in 1992. Now 2010
-    Spot was born in 1994. Now 2010
-    Ab was born in 1942. Now 2010
-    
+
+```
+Alex was born in 1992. Now 2010
+Spot was born in 1994. Now 2010
+Ab was born in 1942. Now 2010
+```   
 
 ## Lambdas
 
@@ -310,28 +355,34 @@ with global context. Lambdas always executed asynchronously.
 
 Template:
     
-    {{#lambda}}
-        Lambda contents {{name}}.
-    {{/lambda}}
+```
+{{#lambda}}
+    Lambda contents {{name}}.
+{{/lambda}}
+```
     
 Context:
     
-    {
-        name: "John Dow"
-        lambda: function() {
-            return function(context, callback) {
-                callback(undefined, function(data, context, callback) {
-                    setTimeout(function(){
-                        callback(data.toUpperCase());
-                    }, 300);
-                });
-            };
-        }
+```js
+{
+    name: "John Dow"
+    lambda: function() {
+        return function(context, callback) {
+            callback(undefined, function(data, context, callback) {
+                setTimeout(function(){
+                    callback(data.toUpperCase());
+                }, 300);
+            });
+        };
     }
+}
+```
         
 Output:
     
-    LAMBDA CONTENTS JOHN DOW.
+```
+LAMBDA CONTENTS JOHN DOW.
+```
     
 Another tricky code. Lets explain it. As in previous examples, the function 
 returns a function that takes two arguments: local context and callback. 
@@ -358,21 +409,25 @@ sign `<` and relative path to base template.
 
 Syntax of override template:
     
-    {{< relative/path/to/base.template}}
-    
-    {{+ block}}
-        Override contents
-    {{/ block}}
+```
+{{< relative/path/to/base.template}}
+
+{{+ block}}
+    Override contents
+{{/ block}}
+```
     
 And in base template you must define blocks:
 
-    Start of base template
-    {{+ block}}
-        Base contents
-    {{/ block}}
-    {{+ another_block}}
-        Base contents of another block
-    {{/ another_block}}
+```
+Start of base template
+{{+ block}}
+    Base contents
+{{/ block}}
+{{+ another_block}}
+    Base contents of another block
+{{/ another_block}}
+```
     
 If base template is executed itself, block tags simply disappears.
     
@@ -380,41 +435,51 @@ Lets assume previous code as "base.html" and define two another templates:
 
 override-one.html:
 
-    {{< base.html}}
-    
-    {{+ block}}
-        Override ONE contents
-    {{/ block}}
-    
-    {{+ another_block}}
-        Override ONE contents of another block
-    {{/ another_block}}
+```
+{{< base.html}}
+
+{{+ block}}
+    Override ONE contents
+{{/ block}}
+
+{{+ another_block}}
+    Override ONE contents of another block
+{{/ another_block}}
+```
     
 And override-two.html:
 
-    {{< override-one.html}}
-    
-    {{+ block}}
-        Override TWO contents
-    {{/ block}}
+```
+{{< override-one.html}}
+
+{{+ block}}
+    Override TWO contents
+{{/ block}}
+```
     
 Result of execution base.html:
 
-    Start of base template
-        Base contents
-        Base contents of another block
+```
+Start of base template
+    Base contents
+    Base contents of another block
+```
 
 Result of execution override-one.html:
 
-    Start of base template
-        Override ONE contents
-        Override ONE contents of another block
+```
+Start of base template
+    Override ONE contents
+    Override ONE contents of another block
+```
         
 And finally, result of exetution override-two.html:
 
-    Start of base template
-        Override TWO contents
-        Override ONE contents of another block
+```
+Start of base template
+    Override TWO contents
+    Override ONE contents of another block
+```
 
 At first glance work with overrides can seem a bit messy, but you can find them 
 quite useful.
@@ -427,19 +492,25 @@ path to partial. Partials can be recursive.
 
 template.html
 
-    Start
-    {{> partial.html}}
-    End
+```
+Start
+{{> partial.html}}
+End
+```
     
 partial.html
 
-    Partial contents
+```
+Partial contents
+```
     
 And result of execution template.html:
 
-    Start
-    Partial contents
-    End
+```
+Start
+Partial contents
+End
+```
 
 ### Filters
 
@@ -450,19 +521,25 @@ a tilde `~` and ends with a slash `/`.
 
 Lets execute template with imaginary "toUpperCase" filter:
 
-    {{~toUpperCase}}
-        Name is {{name}}
-    {{/toUpperCase}}
+```
+{{~toUpperCase}}
+    Name is {{name}}
+{{/toUpperCase}}
+```
     
 Provide JSON:
 
-    {
-        name: "John Dow"
-    }
+```js
+{
+    name: "John Dow"
+}
+```
     
 And get the following result:
 
-    NAME IS John Dow
+```
+NAME IS John Dow
+```
 
 As we see, "John Dow" stays in him original case. It happened because the 
 lookup operation was carried out at the runtime phase.
@@ -474,7 +551,6 @@ Nun includes number basic filters:
 * `escape` - Escapes all HTML-specific characters.
 * `compress` - Compresses all multiple spaces to single, trims lines and 
   replaces multiple line endings with single.
-  
 
 #### Custom filters
 
@@ -482,12 +558,14 @@ You can define your own filters or override default filters. To do this,
 place them in the section "filters" in the options. For example, imaginary 
 "toUpperCase" may be defined by following way:
 
-    var filters = {
-        toUpperCase: function(data, callback) {
-            callback(undefined, data.toUpperCase());
-        }
+```js
+var filters = {
+    toUpperCase: function(data, callback) {
+        callback(undefined, data.toUpperCase());
     }
-    nun.render("file", {}, {filters:filters}, ...);
+}
+nun.render("file", {}, {filters:filters}, ...);
+```
 
 As we see, *toUpperCase* is standart asynchronous function that takes two 
 arguments: data and callback. Data is static code fragment. The filter will be 
@@ -496,35 +574,43 @@ arguments: Error and warped code fragment.
 
 You can also provide parameters to filters. Just include them in set:
 
-    var filters = {
-        wrap: function(data, callback) {
-            callback(undefined, 
-                    this.wrapOptions.opener + 
-                    data +
-                    this.wrapOptions.closer);
-        },
-        wrapOptions: {
-            opener: "<",
-            closer: ">"
-        }
+```js
+var filters = {
+    wrap: function(data, callback) {
+        callback(undefined, 
+                this.wrapOptions.opener + 
+                data +
+                this.wrapOptions.closer);
+    },
+    wrapOptions: {
+        opener: "<",
+        closer: ">"
     }
-    
-    nun.render("file", {}, {filters:filters}, ...);
+}
+
+nun.render("file", {}, {filters:filters}, ...);
+```
 
 Template:
 
-    {{~wrap}}some text{{/wrap}}
+```
+{{~wrap}}some text{{/wrap}}
+```
 
 Output:
 
-    <some text>
+```
+<some text>
+```
     
 Instead define filters for every template, you can set a filter for all 
 templates:
 
-    nun.setFilter('toUpperCase', function(data, callback) {
-        callback(undefined, data.toUpperCase());
-    });
+```js
+nun.setFilter('toUpperCase', function(data, callback) {
+    callback(undefined, data.toUpperCase());
+});
+```
 
 After that `toUpperCase` will acts as default filter. 
 
@@ -547,24 +633,30 @@ from `{{` and `}}` to custom strings.
 
 Example from Mustache:
 
-    * {{default_tags}}
-    {{= <% %>}}
-    * <% erb_style_tags %>
-    <%={{ }}%>
-    * {{ default_tags_again }}
+```
+* {{default_tags}}
+{{= <% %>}}
+* <% erb_style_tags %>
+<%={{ }}%>
+* {{ default_tags_again }}
+```
     
 Regardless of the enclosure, each template starts to be processed with default
 tags shape. For example, two following templates are working correctly:
 
 template.html
 
-    {{= <% %>}}
-    <% > partial.html%>
-    <%some.test.key%>
+```
+{{= <% %>}}
+<% > partial.html%>
+<%some.test.key%>
+```
     
 partial.html
 
-    {{in.partial}}
+```
+{{in.partial}}
+```
     
 ## Compile-phase options
 
@@ -575,7 +667,9 @@ You can set some compile-phase options.
 By default *nun* caching all compiled templates. To disable caching fo template
 you can set `options.cache` parameter to `false`.
 
-    nun.render(__dirname + "/file.html", {}, { cache: false }, ...);
+```js
+nun.render(__dirname + "/file.html", {}, { cache: false }, ...);
+```
     
 If you set different options for one template file, *nun* caching will consider 
 them as two different templates. 
@@ -586,7 +680,9 @@ By default *nun* don't compressing whitespace. Instead set `compress`
 compile-phase filters, you can compress all whitespace in template by setting 
 `options.compress` parameter to `true`.
 
-    nun.render(__dirname + "/file.html", {}, { compress: true }, ...);
+```js
+nun.render(__dirname + "/file.html", {}, { compress: true }, ...);
+```
     
 **`node.js` must be compiled with openssl support.**
     
@@ -604,8 +700,10 @@ tuned "million-comlex" benchmark from mustache taken *about 45 seconds*.
 
 You can run benchmark as follows:
 
-    cd where/is/nun
-    make benchmark
+```
+cd where/is/nun
+make benchmark
+```
 
 ### ... become Nun?
 
